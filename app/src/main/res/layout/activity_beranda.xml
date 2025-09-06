@@ -46,7 +46,7 @@
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:contentDescription="Profile Icon"
-                android:src="@drawable/profil"/>
+                />
         </LinearLayout>
 
         <!-- suhu, kelembapan, audio Bar -->
@@ -112,7 +112,6 @@
                     android:id="@+id/btnAudio"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/mic"
                     android:contentDescription="Mic Assistant" />
             </LinearLayout>
         </LinearLayout>
@@ -129,7 +128,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:contentDescription="Previous"
-                android:src="@drawable/kiri"/>
+                />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -143,7 +142,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:contentDescription="Next"
-                android:src="@drawable/kanan"/>
+                />
         </LinearLayout>
 
         <!-- Grid Saklar & Kontrol -->
@@ -162,8 +161,8 @@
 
                 <!-- Saklar 1 -->
                 <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical"
@@ -173,7 +172,7 @@
                         android:id="@+id/imgSaklar1"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@drawable/saklar"/>
+                        />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -190,39 +189,6 @@
                         android:minHeight="48dp"/>
                 </LinearLayout>
 
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="match_parent" />
-
-                <!-- Saklar 2 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/imgSaklar2"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/saklar"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Saklar 2"
-                        android:textSize="16sp"
-                        android:layout_marginTop="8dp" />
-
-                    <Switch
-                        android:id="@+id/switch2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="48dp"
-                        android:minHeight="48dp"/>
-                </LinearLayout>
             </LinearLayout>
 
             <!-- Baris 2 -->
@@ -235,7 +201,7 @@
 
                 <!-- Saklar 3 -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
@@ -246,7 +212,7 @@
                         android:id="@+id/imgSaklar3"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@drawable/saklar"/>
+                        />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -262,127 +228,41 @@
                         android:minWidth="48dp"
                         android:minHeight="48dp"/>
                 </LinearLayout>
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="match_parent" />
-
-                <!-- Saklar 4 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/imgSaklar4"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/saklar"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Saklar 4"
-                        android:textSize="16sp"
-                        android:layout_marginTop="8dp" />
-
-                    <Switch
-                        android:id="@+id/switch4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="48dp"
-                        android:minHeight="48dp"/>
-                </LinearLayout>
             </LinearLayout>
 
-            <!-- Baris 3 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="2">
 
-                <!-- Lampu -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/lampu"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Lampu"
-                        android:textSize="16sp"
-                        android:layout_marginTop="8dp" />
-
-                    <Switch
-                        android:id="@+id/switchLampu"
-                        android:layout_width="wrap_content"
-                        android:layout_height="53dp"
-                        android:minWidth="64dp"
-                        android:minHeight="64dp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="match_parent" />
-
-                <!-- Music -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_marginBottom="4dp"
-                        android:contentDescription="Music Icon"
-                        android:src="@drawable/music" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Music"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp"/>
-
-                    <!-- Controls: Prev & Next -->
-                    <Switch
-                        android:id="@+id/swMusic"
-                        android:layout_width="150dp"
-                        android:layout_height="50dp"
-                        android:layout_marginBottom="8dp"
-                        android:minWidth="200dp"
-                        android:minHeight="60dp"
-                        android:text="Play / Pause" />
-
-
-                </LinearLayout>
-            </LinearLayout>
         </LinearLayout>
 
         <!-- Footer -->
-        <View
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="10dp"
+            android:layout_height="5dp"
             android:background="@drawable/bg_card"
             android:layout_marginTop="16dp" />
-    </LinearLayout>
+
+        <EditText
+            android:id="@+id/ssidInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="WiFi SSID"
+            android:minWidth="48dp"
+            android:minHeight="48dp"/>
+
+        <EditText
+            android:id="@+id/passInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="WiFi Password"
+            android:inputType="textPassword"
+            android:minWidth="48dp"
+            android:minHeight="48dp"/>
+
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="Connect Device" />
+        </LinearLayout>
 </FrameLayout>
