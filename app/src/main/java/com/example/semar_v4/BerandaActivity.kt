@@ -29,11 +29,6 @@ class BerandaActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_beranda)
 
-        // inisialisasi view setelah setContentView
-        ssidInput = findViewById(R.id.ssidInput)
-        passInput = findViewById(R.id.passInput)
-        btnConnect = findViewById(R.id.btnSend) // tombol "CONNECT DEVICE"
-
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
