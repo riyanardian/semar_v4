@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "1075818844597",
+    "firebase_url": "https://project-pamp-432ca-default-rtdb.firebaseio.com",
+    "project_id": "project-pamp-432ca",
+    "storage_bucket": "project-pamp-432ca.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075818844597:android:fe92098cac60370a9689fc",
+        "android_client_info": {
+          "package_name": "com.example.firebaseconn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCAU6HG_SbzcQMiCwImku9W301-YV9xaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075818844597:android:15e92e756c0c2ae39689fc",
+        "android_client_info": {
+          "package_name": "com.example.portalutyeah"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCAU6HG_SbzcQMiCwImku9W301-YV9xaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075818844597:android:4aa12820362e51339689fc",
+        "android_client_info": {
+          "package_name": "com.example.semar_v4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCAU6HG_SbzcQMiCwImku9W301-YV9xaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
