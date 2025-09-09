@@ -20,7 +20,7 @@
         android:id="@+id/loginForm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/btnRegister"
+        android:layout_above="@id/btnReg"
         android:layout_marginBottom="110dp"
         android:gravity="center"
         android:orientation="vertical"
@@ -68,7 +68,7 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/btnRegister"
+        android:id="@+id/btnReg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

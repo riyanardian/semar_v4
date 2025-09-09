@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.semar_v4"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.semar_v4"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -78,4 +78,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation ("com.android.volley:volley:1.2.1")
+    implementation ("com.google.code.gson:gson:2.9.0")
 }
