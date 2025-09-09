@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">semar_v4</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="senin">Sen</string>
+    <string name="selasa">Sel</string>
+    <string name="rabu">Rab</string>
+    <string name="kamis">Kam</string>
+    <string name="jumat">Jum</string>
+    <string name="sabtu">Sab</string>
+    <string name="minggu">Min</string>
 </resources>

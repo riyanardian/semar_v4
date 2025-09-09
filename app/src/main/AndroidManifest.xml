@@ -27,10 +27,28 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".Login"
-            android:exported="true" />
+            android:name=".Jadwal"
+            android:exported="false" />
+        <activity
+            android:name=".Device"
+            android:exported="false" />
+        <activity
+            android:name=".header.otomatos"
+            android:exported="false" />
+        <activity
+            android:name=".header.manual"
+            android:exported="false" />
+        <activity
+            android:name=".Register"
+            android:exported="false" />
         <activity
             android:name=".WifiMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UserMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BerandaActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Semar_v4">

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:id="@+id/main"
+    >
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Atur Jadwal Relay"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#5B2DBA"
+            android:layout_marginBottom="12dp"/>
+
+        <Switch
+            android:id="@+id/switchSchedule"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Aktifkan Jadwal"
+            android:textColor="#000"
+            android:minHeight="48dp"
+            android:minWidth="48dp"/>
+    </LinearLayout>

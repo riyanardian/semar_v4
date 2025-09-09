@@ -14,7 +14,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var inputEmail: EditText
     private lateinit var inputPassword: EditText
     private lateinit var btnLogin: Button
-    private lateinit var btnRegister: Button
+    private lateinit var btnReg: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,14 +24,14 @@ class LoginActivity : AppCompatActivity() {
         inputEmail = findViewById(R.id.inputEmail)
         inputPassword = findViewById(R.id.inputPassword)
         btnLogin = findViewById(R.id.btnLogin)
-        btnRegister = findViewById(R.id.btnRegister)
+        btnReg = findViewById(R.id.btnReg)
 
         // Set onClickListener
         btnLogin.setOnClickListener {
             loginUser()
         }
 
-        btnRegister.setOnClickListener {
+        btnReg.setOnClickListener {
             // Pindah ke RegisterActivity
             startActivity(Intent(this, RegisterActivity::class.java))
         }

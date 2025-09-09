@@ -88,6 +88,12 @@ class BerandaActivity : AppCompatActivity() {
             val intent = Intent(this, Device::class.java)
             startActivity(intent)
         }
+
+        // tambah device
+        device.setOnClickListener {
+            val intent = Intent(this, Jadwal::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -112,6 +118,6 @@ class BerandaActivity : AppCompatActivity() {
                 replaceFragment(fragment)
             }
             .setNegativeButton("Batal", null)
-        .show()
+            .show()
     }
 }
