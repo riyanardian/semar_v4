@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F6FA">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#805B2DBA"
+        android:padding="8dp">
+
+        <!-- Tombol Back -->
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_kembali"
+            android:contentDescription="Back"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Spacer kiri-kanan -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Device"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <!-- Spacer kanan -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+
+    <!-- Konten scroll -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Button Turn On WiFi -->
+            <Button
+                android:id="@+id/btnTurnOnWifi"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:text="TURN ON WIFI"
+                android:textAllCaps="true"
+                android:layout_gravity="center"
+                android:layout_marginBottom="16dp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_card"
+                android:backgroundTint="#5B2DBA" />
+
+            <!-- Petunjuk -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Langkah-Langkah Menambahkan Device"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Aktifkan perangkat ESP\n- Nyalakan perangkat hingga lampu indikator menyala dan menandakan masuk ke mode Access Point (AP).\n\n2. Hubungkan WiFi ke Access Point ESP\n- Buka menu WiFi di smartphone.\n- Cari nama WiFi (SSID) dari ESP (contoh: ESP_Device_XXXX).\n- Masukkan password sesuai yang tertera di buku panduan (jika ada).\n\n3. Akses halaman konfigurasi ESP\n- Setelah terhubung, buka browser di smartphone.\n- Ketikkan alamat IP yang tercantum di buku panduan (contoh: 192.168.4.1).\n- Maka akan muncul halaman konfigurasi perangkat.\n\n4. Tambahkan Device\n- Di halaman konfigurasi, pilih menu 'Add Device' atau tombol Tambah Perangkat.\n- Masukkan informasi WiFi lokasi yang akan digunakan (SSID dan password WiFi rumah/kantor).\n\n5. Simpan dan Hubungkan\n- Tekan tombol Simpan / Connect.\n- ESP akan mencoba terhubung ke jaringan WiFi yang sudah dimasukkan.\n\n6. Koneksi Berhasil\n- Jika berhasil, lampu indikator akan berubah sesuai petunjuk (lihat buku panduan).\n- Aplikasi akan menampilkan perangkat baru yang sudah terhubung ke WiFi lokasi."
+                android:lineSpacingExtra="4dp"
+                android:textSize="13sp"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Tombol fixed bawah -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnSetWifi"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="SET LOKASI WIFI"
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_card"
+            android:backgroundTint="#5B2DBA" />
+    </LinearLayout>
+
+</LinearLayout>
