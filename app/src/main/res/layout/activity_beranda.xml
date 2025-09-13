@@ -172,12 +172,14 @@
             app:tint="@android:color/white" />
 
         <ImageView
+            android:id="@+id/btnAccount"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_weight="1"
             android:contentDescription="account"
             android:src="@drawable/icon_user"
             app:tint="@android:color/white" />
+
     </LinearLayout>
 
 </LinearLayout>

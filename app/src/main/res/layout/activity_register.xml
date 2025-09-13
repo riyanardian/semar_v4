@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:id="@+id/main">
 
     <!-- Background Blur -->
     <ImageView
@@ -45,7 +46,16 @@
 
             <!-- Email -->
             <EditText
-                android:id="@+id/emailRegister"
+                android:id="@+id/inputUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Username"
+                android:background="@android:drawable/edit_text"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/inputEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Email"
@@ -56,7 +66,7 @@
 
             <!-- Password -->
             <EditText
-                android:id="@+id/passwordRegister"
+                android:id="@+id/inputPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Password"
@@ -65,16 +75,6 @@
                 android:padding="12dp"
                 android:layout_marginBottom="16dp" />
 
-            <!-- Konfirmasi Password -->
-            <EditText
-                android:id="@+id/confirmPasswordRegister"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Konfirmasi Password"
-                android:inputType="textPassword"
-                android:background="@android:drawable/edit_text"
-                android:padding="12dp"
-                android:layout_marginBottom="24dp" />
 
             <!-- Tombol Register -->
             <Button
@@ -85,6 +85,7 @@
                 android:backgroundTint="@color/teal_700"
                 android:textColor="@android:color/white"
                 android:layout_marginBottom="16dp" />
+
 
         </LinearLayout>
     </ScrollView>

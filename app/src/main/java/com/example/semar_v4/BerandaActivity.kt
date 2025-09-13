@@ -89,9 +89,10 @@ class BerandaActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // tambah device
-        device.setOnClickListener {
-            val intent = Intent(this, Jadwal::class.java)
+        // 🔹 Arahkan ke ProfileActivity saat icon account diklik
+        val btnAccount = findViewById<ImageView>(R.id.btnAccount)
+        btnAccount.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
         }
     }

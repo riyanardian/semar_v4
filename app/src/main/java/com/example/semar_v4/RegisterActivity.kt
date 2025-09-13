@@ -1,94 +1,109 @@
+package com.example.semar_v4
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
-import com.example.semar_v4.R
-import org.json.JSONObject
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import okhttp3.*
+import java.io.IOException
 
 class RegisterActivity : AppCompatActivity() {
-    private lateinit var emailRegister: EditText
-    private lateinit var passwordRegister: EditText
-    private lateinit var confirmPasswordRegister: EditText
-    private lateinit var btnRegister: Button
+    private val httpClient = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_register) // Sesuaikan dengan nama file XML Anda
+        enableEdgeToEdge()
+        setContentView(R.layout.activity_register)
 
-        // Inisialisasi View
-        emailRegister = findViewById(R.id.emailRegister)
-        passwordRegister = findViewById(R.id.passwordRegister)
-        confirmPasswordRegister = findViewById(R.id.confirmPasswordRegister)
-        btnRegister = findViewById(R.id.btnRegister)
+        // Setup edge-to-edge padding
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
-        // Set onClickListener untuk tombol register
+        // Cek permission
+        checkPermissions()
+
+        // Ambil view dari layout
+        val inputUsername = findViewById<EditText>(R.id.inputUsername)
+        val inputPassword = findViewById<EditText>(R.id.inputPassword)
+        val inputEmail = findViewById<EditText>(R.id.inputEmail)
+        val btnRegister = findViewById<Button>(R.id.btnRegister)
+
+        // Klik tombol register
         btnRegister.setOnClickListener {
-            registerUser()
-        }
-    }
+            val username = inputUsername.text.toString().trim()
+            val password = inputPassword.text.toString().trim()
+            val email = inputEmail.text.toString().trim()
 
-    private fun registerUser() {
-        val email = emailRegister.text.toString().trim()
-        val password = passwordRegister.text.toString().trim()
-        val confirmPassword = confirmPasswordRegister.text.toString().trim()
-
-        // Validasi input
-        if (email.isEmpty()) {
-            emailRegister.error = "Email tidak boleh kosong"
-            emailRegister.requestFocus()
-            return
-        }
-
-        if (password.isEmpty()) {
-            passwordRegister.error = "Password tidak boleh kosong"
-            passwordRegister.requestFocus()
-            return
-        }
-
-        if (password != confirmPassword) {
-            confirmPasswordRegister.error = "Password tidak cocok"
-            confirmPasswordRegister.requestFocus()
-            return
-        }
-
-        // URL server register (ganti dengan URL server Anda)
-        val url = "http://10.0.2.2/android_login/register.php" // Untuk emulator
-        // Untuk device fisik: "http://192.168.1.100/android_login/register.php"
-
-        // Membuat request
-        val stringRequest = object : StringRequest(
-            Method.POST, url,
-            { response ->
-                try {
-                    val jsonObject = JSONObject(response)
-                    val success = jsonObject.getBoolean("success")
-                    val message = jsonObject.getString("message")
-
-                    if (success) {
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                        finish() // Kembali ke LoginActivity
-                    } else {
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error parsing data: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            },
-            { error ->
-                Toast.makeText(this, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-            }) {
-            override fun getParams(): Map<String, String> {
-                val params = HashMap<String, String>()
-                params["email"] = email
-                params["password"] = password
-                return params
+            if (username.isNotEmpty() && password.isNotEmpty() && email.isNotEmpty()) {
+                sendRegister(username, password, email)
+            } else {
+                Toast.makeText(this, "Isi semua field!", Toast.LENGTH_LONG).show()
             }
         }
-
-        // Menambahkan request ke queue
-        Volley.newRequestQueue(this).add(stringRequest)
     }
+
+    // 🔹 Cek & minta permission runtime
+    private fun checkPermissions() {
+        val permissions = arrayOf(
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_NETWORK_STATE
+        )
+
+        val missing = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missing.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toTypedArray(), 1001)
+        }
+    }
+
+    // 🔹 Fungsi kirim data ke Register.php
+    private fun sendRegister(username: String, password: String, email: String) {
+        val formBody = FormBody.Builder()
+            .add("username", username)
+            .add("password", password)
+            .add("email", email)
+            .build()
+
+        val request = Request.Builder()
+            .url("http://192.168.0.111/Registrasi.php") // ganti IP sesuai XAMPP/laptop kamu
+            .post(formBody)
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@RegisterActivity, "Gagal kirim ke server!", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val resp = response.body?.string()
+                runOnUiThread {
+                    Toast.makeText(this@RegisterActivity, "Respon server: $resp", Toast.LENGTH_LONG).show()
+
+                    // Kalau respon dari server menunjukkan sukses
+                    if (resp?.contains("Registrasi Berhasil", ignoreCase = true) == true) {
+                        val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
+                        startActivity(intent)
+                        finish() // supaya tidak bisa kembali ke register
+                    }
+                }
+            }
+
+        })
+        }
 }

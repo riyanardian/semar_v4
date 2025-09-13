@@ -1,103 +1,97 @@
+package com.example.semar_v4
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
-import com.example.semar_v4.BerandaActivity
-import com.example.semar_v4.R
+import okhttp3.*
 import org.json.JSONObject
+import java.io.IOException
 
 class LoginActivity : AppCompatActivity() {
-    private lateinit var inputEmail: EditText
-    private lateinit var inputPassword: EditText
-    private lateinit var btnLogin: Button
-    private lateinit var btnReg: Button
+    private val httpClient = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login) // Ganti dengan nama file layout Anda
+        setContentView(R.layout.activity_login) // pakai file layout yg kamu kasih tadi
 
-        // Inisialisasi View
-        inputEmail = findViewById(R.id.inputEmail)
-        inputPassword = findViewById(R.id.inputPassword)
-        btnLogin = findViewById(R.id.btnLogin)
-        btnReg = findViewById(R.id.btnReg)
+        val inputEmail = findViewById<EditText>(R.id.inputEmail)
+        val inputPassword = findViewById<EditText>(R.id.inputPassword)
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val btnReg = findViewById<Button>(R.id.btnReg)
 
-        // Set onClickListener
         btnLogin.setOnClickListener {
-            loginUser()
+            val email = inputEmail.text.toString().trim()
+            val password = inputPassword.text.toString().trim()
+
+            if (email.isNotEmpty() && password.isNotEmpty()) {
+                loginUser(email, password)
+            } else {
+                Toast.makeText(this, "Isi email dan password!", Toast.LENGTH_SHORT).show()
+            }
         }
 
+        // pindah ke register
         btnReg.setOnClickListener {
-            // Pindah ke RegisterActivity
             startActivity(Intent(this, RegisterActivity::class.java))
         }
     }
 
-    private fun loginUser() {
-        val email = inputEmail.text.toString().trim()
-        val password = inputPassword.text.toString().trim()
+    private fun loginUser(email: String, password: String) {
+        val formBody = FormBody.Builder()
+            .add("email", email)
+            .add("password", password)
+            .build()
 
-        // Validasi input
-        if (email.isEmpty()) {
-            inputEmail.error = "Email tidak boleh kosong"
-            inputEmail.requestFocus()
-            return
-        }
+        val request = Request.Builder()
+            .url("http://192.168.0.111/Login.php") // ganti sesuai IP laptop kamu
+            .post(formBody)
+            .build()
 
-        if (password.isEmpty()) {
-            inputPassword.error = "Password tidak boleh kosong"
-            inputPassword.requestFocus()
-            return
-        }
-
-        // URL server login (ganti dengan URL server Anda)
-        val url = "http://10.0.2.2/android_login/login.php" // Untuk emulator
-        // Untuk device fisik: "http://192.168.1.100/android_login/login.php"
-
-        // Membuat request
-        val stringRequest = object : StringRequest(
-            Method.POST, url,
-            { response ->
-                try {
-                    val jsonObject = JSONObject(response)
-                    val success = jsonObject.getBoolean("success")
-                    val message = jsonObject.getString("message")
-
-                    if (success) {
-                        val userId = jsonObject.getInt("user_id")
-
-                        // Simpan user_id ke SharedPreferences
-                        val sharedPreferences = getSharedPreferences("user_data", MODE_PRIVATE)
-                        sharedPreferences.edit().putInt("user_id", userId).apply()
-
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-                        // Pindah ke MainActivity
-                        startActivity(Intent(this, BerandaActivity::class.java))
-                        finish()
-                    } else {
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error parsing data: ${e.message}", Toast.LENGTH_SHORT).show()
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "Gagal konek ke server!", Toast.LENGTH_SHORT).show()
                 }
-            },
-            { error ->
-                Toast.makeText(this, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-            }) {
-            override fun getParams(): Map<String, String> {
-                val params = HashMap<String, String>()
-                params["email"] = email
-                params["password"] = password
-                return params
             }
-        }
 
-        // Menambahkan request ke queue
-        Volley.newRequestQueue(this).add(stringRequest)
+            override fun onResponse(call: Call, response: Response) {
+                val resp = response.body?.string()
+                runOnUiThread {
+                    try {
+                        val json = JSONObject(resp)
+                        val success = json.getBoolean("success")
+                        val message = json.getString("message")
+
+                        if (success) {
+                            val user = json.getJSONObject("user")
+
+                            val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
+                            with(sharedPref.edit()) {
+                                putInt("id", user.getInt("id"))
+                                putString("username", user.getString("username"))
+                                putString("email", user.getString("email"))
+                                putString("photo", user.optString("photo", ""))
+                                apply()
+                            }
+
+                            startActivity(Intent(this@LoginActivity, ProfileActivity::class.java))
+                            finish()
+
+                            Toast.makeText(this@LoginActivity, "Login sukses!", Toast.LENGTH_SHORT).show()
+                            // pindah ke halaman utama (contoh MainActivity)
+                            startActivity(Intent(this@LoginActivity, BerandaActivity::class.java))
+                            finish()
+                        } else {
+                            Toast.makeText(this@LoginActivity, message, Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@LoginActivity, "Error parsing: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
     }
 }

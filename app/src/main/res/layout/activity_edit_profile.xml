@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:background="#FAFAFA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Foto Profil -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/imgEditProfile"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_profile_placeholder"
+            app:civ_border_width="3dp"
+            app:civ_border_color="#FF5722"
+            android:layout_marginTop="100dp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Tombol Pilih Foto -->
+        <Button
+            android:id="@+id/btnChoosePhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pilih Foto"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FF5722"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Input Nama -->
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Input Email -->
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Input Bio -->
+        <EditText
+            android:id="@+id/etBio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Bio"
+            android:inputType="textMultiLine"
+            android:padding="12dp"
+            android:minLines="3"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Tombol Simpan -->
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Simpan"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FF5722"
+            android:layout_marginBottom="16dp" />
+
+    </LinearLayout>
+</ScrollView>
