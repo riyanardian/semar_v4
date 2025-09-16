@@ -12,15 +12,15 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import okhttp3.*
+import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 
-
 class EditProfileActivity : AppCompatActivity() {
     private val client = OkHttpClient()
-    private val BASE_URL = "http://192.168.0.111"
+    private val BASE_URL = "http://10.204.219.1"
 
     private lateinit var etName: EditText
     private lateinit var etEmail: EditText
@@ -53,11 +53,15 @@ class EditProfileActivity : AppCompatActivity() {
         etBio.setText(intent.getStringExtra("bio"))
         currentPhoto = intent.getStringExtra("photo") ?: ""
 
-        // Load foto awal
-        if (currentPhoto.isNotEmpty()) {
+        // Load foto awal (pakai placeholder jika kosong/null)
+        if (currentPhoto.isNotEmpty() && currentPhoto != "null") {
             Glide.with(this)
                 .load("$BASE_URL/$currentPhoto")
+                .placeholder(R.drawable.ic_user_placeholder)
+                .error(R.drawable.ic_user_placeholder)
                 .into(imgProfile)
+        } else {
+            imgProfile.setImageResource(R.drawable.ic_user_placeholder)
         }
 
         // Pilih foto baru
@@ -80,14 +84,22 @@ class EditProfileActivity : AppCompatActivity() {
 
         // Jika user pilih foto baru
         selectedImageUri?.let { uri ->
-            val filePath = getRealPathFromURI(uri)
-            filePath?.let {
-                val file = File(it)
-                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                builder.addFormDataPart("photo", file.name, requestFile)
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                val tempFile = File(cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+                val outputStream = tempFile.outputStream()
+                inputStream?.copyTo(outputStream)
+                outputStream.close()
+                inputStream?.close()
+
+                val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+                builder.addFormDataPart("photo", tempFile.name, requestFile)
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "Gagal memproses foto: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
-
 
         val requestBody = builder.build()
 
@@ -98,43 +110,40 @@ class EditProfileActivity : AppCompatActivity() {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread { Toast.makeText(this@EditProfileActivity, "Update gagal", Toast.LENGTH_SHORT).show() }
+                runOnUiThread {
+                    Toast.makeText(this@EditProfileActivity, "Update gagal: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string()
                 runOnUiThread {
-                    Toast.makeText(this@EditProfileActivity, "Profil berhasil diperbarui", Toast.LENGTH_SHORT).show()
+                    if (body != null) {
+                        try {
+                            val json = JSONObject(body)
+                            if (json.getString("status") == "success") {
+                                val newPhoto = json.optString("photo", currentPhoto)
 
-                    // Balikkan data baru ke ProfileActivity
-                    val intent = Intent()
-                    intent.putExtra("username", username)
-                    intent.putExtra("email", email)
-                    intent.putExtra("bio", bio)
-                    if (selectedImageUri != null) {
-                        intent.putExtra("photo", "uploads/${System.currentTimeMillis()}_${userId}.jpg")
-                        // path ini harus sama dengan yang disimpan server
-                    } else {
-                        intent.putExtra("photo", currentPhoto)
+                                Toast.makeText(this@EditProfileActivity, "Profil berhasil diperbarui", Toast.LENGTH_SHORT).show()
+
+                                val intent = Intent()
+                                intent.putExtra("username", username)
+                                intent.putExtra("email", email)
+                                intent.putExtra("bio", bio)
+                                intent.putExtra("photo", newPhoto)
+
+                                setResult(Activity.RESULT_OK, intent)
+                                finish()
+                            } else {
+                                Toast.makeText(this@EditProfileActivity, "Update gagal: ${json.getString("message")}", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(this@EditProfileActivity, "Response error", Toast.LENGTH_SHORT).show()
+                        }
                     }
-
-                    setResult(Activity.RESULT_OK, intent)
-                    finish()
                 }
             }
         })
-    }
-
-    private fun getRealPathFromURI(uri: Uri): String? {
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        return if (cursor == null) {
-            uri.path
-        } else {
-            cursor.moveToFirst()
-            val idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
-            val path = cursor.getString(idx)
-            cursor.close()
-            path
-        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

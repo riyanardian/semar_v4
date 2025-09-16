@@ -87,5 +87,4 @@ dependencies {
     implementation ("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
 >>>>>>> 975eb3e (tambahan BANYAK)
 
-
 }
