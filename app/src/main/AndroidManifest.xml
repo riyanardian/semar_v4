@@ -27,6 +27,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+<<<<<<< HEAD
             android:name=".EditProfileActivity"
             android:exported="false" />
         <activity
@@ -34,6 +35,9 @@
             android:exported="false" />
         <activity
             android:name=".UserActivity"
+=======
+            android:name=".Histori"
+>>>>>>> 975eb3e (tambahan BANYAK)
             android:exported="false" />
         <activity
             android:name=".Jadwal"
@@ -51,10 +55,10 @@
             android:name=".RegisterActivity"
             android:exported="false" />
         <activity
-            android:name=".WifiMainActivity"
+            android:name=".UserMainActivity"
             android:exported="false" />
         <activity
-            android:name=".UserMainActivity"
+            android:name=".WifiMainActivity"
             android:exported="false" />
         <activity
             android:name=".BerandaActivity"

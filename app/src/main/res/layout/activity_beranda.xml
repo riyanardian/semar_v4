@@ -100,6 +100,8 @@
             />
     </LinearLayout>
 
+    <!-- Buttons Manual / Otomatis -->
+
     <FrameLayout
         android:id="@+id/bodyContainer"
         android:layout_width="match_parent"
@@ -156,6 +158,7 @@
             app:tint="@android:color/white" />
 
         <ImageView
+            android:id="@+id/btnJadwal"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_weight="1"
@@ -164,6 +167,7 @@
             app:tint="@android:color/white" />
 
         <ImageView
+            android:id="@+id/histori"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_weight="1"

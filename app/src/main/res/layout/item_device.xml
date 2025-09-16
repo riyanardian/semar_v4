@@ -1,16 +1,88 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp"
+    android:foreground="?attr/selectableItemBackground">
 
-    <TextView
-        android:id="@+id/deviceName"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Device"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"/>
-</LinearLayout>
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Nama Device -->
+        <TextView
+            android:id="@+id/deviceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device Name"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:textStyle="bold"
+            android:textColor="@android:color/black" />
+
+        <!-- Jenis Device -->
+        <TextView
+            android:id="@+id/deviceType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device Type"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="@android:color/darker_gray" />
+
+        <!-- Chip ID -->
+        <TextView
+            android:id="@+id/chipId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chip ID"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textColor="@android:color/darker_gray" />
+
+        <!-- Tambahan: Runhour Relay 2 -->
+        <TextView
+            android:id="@+id/tvRunhourRelay2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Runhour Relay 2: 0 jam"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="@android:color/holo_blue_dark"
+            android:layout_marginTop="4dp" />
+
+        <!-- Layout horizontal untuk Switch & Delete -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Saklar 2"
+                android:textAppearance="?attr/textAppearanceCaption"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/switchDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"/>
+
+            <ImageView
+                android:id="@+id/btnDeleteDevice"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="16dp"
+                android:contentDescription="Delete Device"
+                android:src="@drawable/sampah" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

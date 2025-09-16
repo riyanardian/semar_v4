@@ -64,10 +64,10 @@
 
             <!-- Button Turn On WiFi -->
             <Button
-                android:id="@+id/btnTurnOnWifi"
+                android:id="@+id/btnAddDevice"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:text="TURN ON WIFI"
+                android:text="TAMBAH DEVICE"
                 android:textAllCaps="true"
                 android:layout_gravity="center"
                 android:layout_marginBottom="16dp"

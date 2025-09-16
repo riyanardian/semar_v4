@@ -8,24 +8,44 @@
     android:padding="24dp"
     android:id="@+id/main">
 
-    <!-- Tombol Turn On WiFi -->
-    <Button
-        android:id="@+id/btnTurnOnWifi"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:text="TURN ON WIFI"
-        android:textAllCaps="true"
-        android:textColor="@android:color/white"
-        android:backgroundTint="#6C4AB6"
-        android:layout_marginBottom="40dp"
-        android:fontFamily="sans-serif-medium"/>
+    <!-- Input Username -->
+    <EditText
+        android:id="@+id/inputUsername"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Username"
+        android:layout_marginBottom="16dp"
+        android:minHeight="48dp"
+        android:minWidth="48dp"/>
 
-    <!-- Tombol Set Lokasi WiFi -->
+    <!-- Input Password -->
+    <EditText
+        android:id="@+id/inputPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:layout_marginBottom="16dp"
+        android:minHeight="48dp"
+        android:minWidth="48dp"/>
+
+    <!-- Input Email -->
+    <EditText
+        android:id="@+id/inputEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
+        android:layout_marginBottom="24dp"
+        android:minHeight="48dp"
+        android:minWidth="48dp"/>
+
+    <!-- Tombol Register -->
     <Button
-        android:id="@+id/btnSetWifi"
+        android:id="@+id/btnRegister"
         android:layout_width="250dp"
         android:layout_height="60dp"
-        android:text="SET LOKASI WIFI"
+        android:text="REGISTER"
         android:textAllCaps="true"
         android:textColor="@android:color/white"
         android:backgroundTint="#6C4AB6"
