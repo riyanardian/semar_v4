@@ -150,20 +150,19 @@ class BerandaActivity : AppCompatActivity() {
         // tambah device
         device.setOnClickListener { startActivity(Intent(this, Device::class.java)) }
 
-<<<<<<< HEAD
+
         // 🔹 Arahkan ke ProfileActivity saat icon account diklik
         val btnAccount = findViewById<ImageView>(R.id.btnAccount)
         btnAccount.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
         }
-=======
         // ke jadwal
         jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
 
         // ke histori
         histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
->>>>>>> 975eb3e (tambahan BANYAK)
+
     }
 
     private fun replaceFragment(fragment: Fragment) {
