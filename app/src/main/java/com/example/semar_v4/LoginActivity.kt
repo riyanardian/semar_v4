@@ -57,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
             .build()
 
         val request = Request.Builder()
-            .url("http://10.204.219.1/Login.php") // ganti sesuai IP laptop kamu
+            .url("http://103.197.190.79/api_mysql/login.php") // ganti sesuai IP laptop kamu
             .post(formBody)
             .build()
 

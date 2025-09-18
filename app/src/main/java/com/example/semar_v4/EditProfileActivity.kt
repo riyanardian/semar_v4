@@ -20,7 +20,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 
 class EditProfileActivity : AppCompatActivity() {
     private val client = OkHttpClient()
-    private val BASE_URL = "http://10.204.219.1"
+    private val BASE_URL = "http://103.197.190.79/api_mysql"
 
     private lateinit var etName: EditText
     private lateinit var etEmail: EditText
@@ -53,7 +53,7 @@ class EditProfileActivity : AppCompatActivity() {
         etBio.setText(intent.getStringExtra("bio"))
         currentPhoto = intent.getStringExtra("photo") ?: ""
 
-        // Load foto awal (pakai placeholder jika kosong/null)
+        // Load foto awal
         if (currentPhoto.isNotEmpty() && currentPhoto != "null") {
             Glide.with(this)
                 .load("$BASE_URL/$currentPhoto")
@@ -70,6 +70,7 @@ class EditProfileActivity : AppCompatActivity() {
             startActivityForResult(intent, PICK_IMAGE_REQUEST)
         }
 
+        // Simpan perubahan
         btnSave.setOnClickListener {
             updateProfile(userId, etName.text.toString(), etEmail.text.toString(), etBio.text.toString())
         }
@@ -104,7 +105,7 @@ class EditProfileActivity : AppCompatActivity() {
         val requestBody = builder.build()
 
         val request = Request.Builder()
-            .url("$BASE_URL/UpdateProfile.php")
+            .url("$BASE_URL/update_profile.php")
             .post(requestBody)
             .build()
 
@@ -121,8 +122,29 @@ class EditProfileActivity : AppCompatActivity() {
                     if (body != null) {
                         try {
                             val json = JSONObject(body)
-                            if (json.getString("status") == "success") {
+
+                            val status = json.optString("status", "")
+                            if (status == "success") {
                                 val newPhoto = json.optString("photo", currentPhoto)
+
+                                // simpan data ke SharedPreferences
+                                val sharedUser = getSharedPreferences("user_session", MODE_PRIVATE)
+                                with(sharedUser.edit()) {
+                                    putString("username", username)
+                                    putString("email", email)
+                                    putString("bio", bio)
+                                    putString("photo", newPhoto)
+                                    apply()
+                                }
+
+                                // Update foto langsung
+                                if (newPhoto.isNotEmpty() && newPhoto != "null") {
+                                    Glide.with(this@EditProfileActivity)
+                                        .load("$BASE_URL/$newPhoto")
+                                        .placeholder(R.drawable.ic_user_placeholder)
+                                        .error(R.drawable.ic_user_placeholder)
+                                        .into(imgProfile)
+                                }
 
                                 Toast.makeText(this@EditProfileActivity, "Profil berhasil diperbarui", Toast.LENGTH_SHORT).show()
 
@@ -135,17 +157,21 @@ class EditProfileActivity : AppCompatActivity() {
                                 setResult(Activity.RESULT_OK, intent)
                                 finish()
                             } else {
-                                Toast.makeText(this@EditProfileActivity, "Update gagal: ${json.getString("message")}", Toast.LENGTH_SHORT).show()
+                                val msg = json.optString("message", "Terjadi kesalahan")
+                                Toast.makeText(this@EditProfileActivity, "Update gagal: $msg", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
-                            Toast.makeText(this@EditProfileActivity, "Response error", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@EditProfileActivity, "Response error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
+                    } else {
+                        Toast.makeText(this@EditProfileActivity, "Response kosong dari server", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         })
     }
 
+    // HARUS di luar Callback, sejajar dengan updateProfile()
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK) {

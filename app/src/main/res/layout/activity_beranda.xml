@@ -25,6 +25,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/welcomeText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Welcome, Riyan!!"
@@ -49,7 +50,8 @@
             android:orientation="vertical"
             android:gravity="center_horizontal">
 
-            <ImageView
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/profileImage"
                 android:layout_marginTop="12dp"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
@@ -78,8 +80,7 @@
             android:backgroundTint="#5B2DBA"
             android:textColor="#FFFFFF"
             android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_card"
-            />
+            android:background="@drawable/bg_card"/>
 
         <Button
             android:id="@+id/btnOtomatis"

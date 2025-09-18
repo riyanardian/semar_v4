@@ -16,13 +16,18 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.semar_v4.header.ManualFragment
 import com.example.semar_v4.header.OtomatisFragment
+import de.hdodenhof.circleimageview.CircleImageView
+import okhttp3.*
+import org.json.JSONObject
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.IOException
 
 class BerandaActivity : AppCompatActivity() {
 
@@ -34,10 +39,16 @@ class BerandaActivity : AppCompatActivity() {
     private lateinit var histori: ImageView
     private lateinit var recyclerView: RecyclerView
     private lateinit var tvGreeting: TextView
+    private lateinit var profileImage: CircleImageView
+    private lateinit var welcomeText: TextView
+
 
     private val devices = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private lateinit var mqttClient: MqttClient
+
+    private val BASE_URL = "http://103.197.190.79/api_mysql"
+    private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +63,10 @@ class BerandaActivity : AppCompatActivity() {
         jadwal = findViewById(R.id.btnJadwal)
         histori = findViewById(R.id.histori)
         recyclerView = findViewById(R.id.recyclerView)
+        profileImage = findViewById(R.id.profileImage)
+        welcomeText = findViewById(R.id.welcomeText)
+
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         tvGreeting = findViewById(R.id.tvGreeting)
 
@@ -69,6 +84,57 @@ class BerandaActivity : AppCompatActivity() {
         val deviceCount = sharedPref.getInt("deviceCount", 0)
 
         // load device dari SharedPreferences
+        // Ambil id user dari session untuk load foto
+        val sharedUser = getSharedPreferences("user_session", Context.MODE_PRIVATE)
+        val userId = sharedUser.getInt("id", 0)
+        if (userId != 0) {
+            loadUserPhoto(userId)
+        } else {
+            profileImage.setImageResource(R.drawable.ic_user_placeholder)
+        }
+        // load nama awal dari session
+        val username = sharedUser.getString("username", "")
+        if (!username.isNullOrEmpty()) {
+            welcomeText.text = "Welcome, $username!!"
+        }
+
+        // MQTT
+        val brokerUrl = "tcp://test.mosquitto.org:1883"
+        val clientId = MqttClient.generateClientId()
+        mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
+
+        Thread {
+            try {
+                mqttClient.connect()
+
+                // subscribe status tiap device setelah connect
+                for (device in devices) {
+                    val topicStatus = "device/${device.chipId}/status"
+                    mqttClient.subscribe(topicStatus) { _, message ->
+                        val isOn = message.toString() == "ON"
+                        runOnUiThread {
+                            adapter.updateDeviceStatus(device.chipId, isOn)
+                        }
+                    }
+                }
+
+                // subscribe runhour relay 2
+                for (device in devices) {
+                    val topicRunhour = "device/${device.chipId}/runhour2"
+                    mqttClient.subscribe(topicRunhour) { _, message ->
+                        val runhour = message.toString() + " jam"
+                        runOnUiThread {
+                            adapter.updateDeviceRunhour(device.chipId, runhour)
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+
+        // tampilkan device atau folder kosong
         if (deviceCount > 0) {
             layoutDefault.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
@@ -86,6 +152,24 @@ class BerandaActivity : AppCompatActivity() {
                 onClick = { device -> showDeviceDetail(device) },
                 onSwitchChanged = { _, _ -> /* Kosong */ }
             )
+            recyclerView.adapter = adapter
+                onSwitchChanged = { _, _ -> }
+            )
+            recyclerView.adapter = adapter
+
+            // subscribe status tiap device untuk update switch otomatis
+            if (mqttClient.isConnected) {
+                for (device in devices) {
+                    val topicStatus = "device/${device.chipId}/status"
+                    mqttClient.subscribe(topicStatus) { _, message ->
+                        val isOn = message.toString() == "ON"
+                        runOnUiThread {
+                            adapter.updateDeviceStatus(device.chipId, isOn)
+                        }
+                    }
+                }
+            }
+
             recyclerView.adapter = adapter
         } else {
             layoutDefault.visibility = View.VISIBLE
@@ -136,9 +220,35 @@ class BerandaActivity : AppCompatActivity() {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
         // ke Jadwal
+        // buka ProfileActivity saat klik icon account
+        val btnAccount = findViewById<ImageView>(R.id.btnAccount)
+        btnAccount.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
+
+        // buka ProfileActivity juga saat klik foto profile di header
+        profileImage.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
+
+        // ke jadwal
         jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
         // ke Histori
         histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
+    }
+    override fun onResume() {
+        super.onResume()
+        // setiap kali activity aktif lagi, refresh nama dan foto
+        val sharedUser = getSharedPreferences("user_session", MODE_PRIVATE)
+        val username = sharedUser.getString("username", "User")
+        welcomeText.text = "Welcome, $username!!"
+
+        val userId = sharedUser.getInt("id", 0)
+        if (userId != 0) {
+            loadUserPhoto(userId)
+        }
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -235,6 +345,7 @@ class BerandaActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
         val count = sharedPref.getInt("deviceCount", 0)
+
         val newList = mutableListOf<Triple<String, String, String>>()
         for (i in 1..count) {
             val name = sharedPref.getString("device_${i}_name", "") ?: ""
@@ -243,6 +354,14 @@ class BerandaActivity : AppCompatActivity() {
             if (i - 1 != position) newList.add(Triple(name, type, chip))
         }
         editor.clear()
+
+            if (i - 1 != position) {
+                newList.add(Triple(name, type, chip))
+            }
+        }
+
+        editor.clear()
+
         newList.forEachIndexed { index, triple ->
             val (name, type, chip) = triple
             val newIndex = index + 1
@@ -279,5 +398,49 @@ class BerandaActivity : AppCompatActivity() {
             else -> "Good Night..."
         }
         tvGreeting.text = greeting
+
+    }
+
+    private fun loadUserPhoto(id: Int) {
+        val request = Request.Builder()
+            .url("$BASE_URL/get_profile.php?id=$id")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    profileImage.setImageResource(R.drawable.ic_user_placeholder)
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.body?.string()?.let {
+                    try {
+                        val json = JSONObject(it)
+                        if (json.getString("status") == "success") {
+                            val data = json.getJSONObject("data")
+                            val photo = data.optString("photo", "")
+
+                            runOnUiThread {
+                                if (photo.isNotEmpty() && photo != "null") {
+                                    Glide.with(this@BerandaActivity)
+                                        .load("$BASE_URL/$photo")
+                                        .placeholder(R.drawable.ic_user_placeholder)
+                                        .error(R.drawable.ic_user_placeholder)
+                                        .into(profileImage)
+                                } else {
+                                    profileImage.setImageResource(R.drawable.ic_user_placeholder)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            profileImage.setImageResource(R.drawable.ic_user_placeholder)
+                        }
+                    }
+                }
+            }
+
+        })
     }
 }

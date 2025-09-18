@@ -28,11 +28,22 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tambah Jadwal"
+            android:text="Histori Aktif"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
+            android:layout_weight="1"
             android:gravity="center" />
+
+        <ImageButton
+            android:id="@+id/btnRefresh"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_refresh"
+            android:background="@null"
+            android:contentDescription="Refresh"
+            android:minWidth="48dp"
+            android:minHeight="48dp"/>
     </LinearLayout>
 
     <!-- Filter -->
@@ -49,8 +60,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:minWidth="48dp"
-            android:minHeight="48dp"
-            />
+            android:minHeight="48dp"/>
         <Spinner
             android:id="@+id/spinnerTanggal"
             android:layout_width="0dp"
@@ -58,7 +68,7 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:minWidth="48dp"
-            android:minHeight="48dp"></Spinner>
+            android:minHeight="48dp"/>
     </LinearLayout>
 
     <!-- Spinner Relay -->
@@ -68,7 +78,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:minWidth="48dp"
-        android:minHeight="48dp"></Spinner>
+        android:minHeight="48dp"/>
 
     <!-- RecyclerView untuk history -->
     <androidx.recyclerview.widget.RecyclerView
@@ -77,6 +87,5 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:layout_marginTop="12dp"/>
-
 
 </LinearLayout>

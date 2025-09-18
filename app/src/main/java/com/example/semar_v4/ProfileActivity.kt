@@ -25,7 +25,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private var userId: Int = 0
     private var photo: String = ""
-    private val BASE_URL = "http://10.204.219.1"
+    private val BASE_URL = "http://103.197.190.79/api_mysql"
     private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +91,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun loadProfile(id: Int) {
         val request = Request.Builder()
-            .url("$BASE_URL/GetProfile.php?id=$id")
+            .url("$BASE_URL/get_profile.php?id=$id")
             .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -110,7 +110,7 @@ class ProfileActivity : AppCompatActivity() {
                             if (json.getString("status") == "success") {
                                 val data = json.getJSONObject("data")
 
-                                // Tambahan: kalau bio kosong/null tampilkan "Tulis bio"
+                                // Kalau bio kosong/null tampilkan "Tulis bio"
                                 val bioText = data.optString("bio", "")
                                 tvBio.text = if (bioText.isNullOrEmpty() || bioText == "null") {
                                     "Tulis bio"
