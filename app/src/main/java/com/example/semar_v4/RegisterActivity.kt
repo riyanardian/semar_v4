@@ -79,7 +79,7 @@ class RegisterActivity : AppCompatActivity() {
             .build()
 
         val request = Request.Builder()
-            .url("http://192.168.0.111/Registrasi.php") // ganti IP sesuai XAMPP/laptop kamu
+            .url("http://10.204.219.1/Registrasi.php") // ganti IP sesuai XAMPP/laptop kamu
             .post(formBody)
             .build()
 

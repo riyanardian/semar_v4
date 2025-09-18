@@ -27,7 +27,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login) // pakai file layout yg kamu kasih tadi
+        setContentView(R.layout.activity_login)
 
         val inputEmail = findViewById<EditText>(R.id.inputEmail)
         val inputPassword = findViewById<EditText>(R.id.inputPassword)
@@ -45,7 +45,6 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
-        // pindah ke register
         btnReg.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
@@ -58,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
             .build()
 
         val request = Request.Builder()
-            .url("http://192.168.0.111/Login.php") // ganti sesuai IP laptop kamu
+            .url("http://10.204.219.1/Login.php") // ganti sesuai IP laptop kamu
             .post(formBody)
             .build()
 
@@ -80,18 +79,28 @@ class LoginActivity : AppCompatActivity() {
                         if (success) {
                             val user = json.getJSONObject("user")
 
+                            // simpan ke SharedPreferences
                             val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
                             with(sharedPref.edit()) {
                                 putInt("id", user.getInt("id"))
                                 putString("username", user.getString("username"))
                                 putString("email", user.getString("email"))
                                 putString("photo", user.optString("photo", ""))
+
                                 putBoolean("isLoggedIn", true) // <-- tambahkan ini
+
+                                putString("bio", user.optString("bio", ""))
+
                                 apply()
                             }
 
                             Toast.makeText(this@LoginActivity, "Login sukses!", Toast.LENGTH_SHORT).show()
+
                             // pindah ke halaman utama (contoh BerandaActivity)
+
+
+                            // pindah ke Beranda
+
                             startActivity(Intent(this@LoginActivity, BerandaActivity::class.java))
                             finish()
                         } else {
