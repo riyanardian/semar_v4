@@ -18,8 +18,8 @@
         <!-- Tombol Back -->
         <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:src="@drawable/icon_kembali"
             android:contentDescription="Back"
             android:padding="8dp"
@@ -27,9 +27,10 @@
 
         <!-- Spacer kiri-kanan -->
         <View
-            android:layout_width="0dp"
+            android:layout_width="12dp"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:layout_marginRight="-75dp"/>
 
         <!-- Title -->
         <TextView
@@ -48,6 +49,49 @@
             android:layout_height="match_parent"
             android:layout_weight="1" />
     </LinearLayout>
+    <!-- Tombol fixed bawah -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/btnSetWifi"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="SET WIFI"
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_card"
+            android:backgroundTint="#5B2DBA" />
+
+        <Button
+            android:id="@+id/btnAddDevice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="TAMBAH DEVICE"
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_card"
+            android:backgroundTint="#5B2DBA" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Langkah-Langkah Menambahkan Device"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="-10dp"
+        android:gravity="center"/>
 
 
     <!-- Konten scroll -->
@@ -55,25 +99,13 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="16dp">
+        android:padding="30dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:orientation="vertical">
 
-            <!-- Button Turn On WiFi -->
-            <Button
-                android:id="@+id/btnAddDevice"
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:text="TAMBAH DEVICE"
-                android:textAllCaps="true"
-                android:layout_gravity="center"
-                android:layout_marginBottom="16dp"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/bg_card"
-                android:backgroundTint="#5B2DBA" />
 
             <!-- Petunjuk -->
             <TextView
@@ -95,22 +127,5 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Tombol fixed bawah -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="16dp">
-
-        <Button
-            android:id="@+id/btnSetWifi"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:text="SET LOKASI WIFI"
-            android:textAllCaps="true"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_card"
-            android:backgroundTint="#5B2DBA" />
-    </LinearLayout>
 
 </LinearLayout>

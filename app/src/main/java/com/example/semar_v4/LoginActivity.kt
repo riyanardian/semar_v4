@@ -13,6 +13,18 @@ import java.io.IOException
 class LoginActivity : AppCompatActivity() {
     private val httpClient = OkHttpClient()
 
+    override fun onStart() {
+        super.onStart()
+        // Cek apakah user sudah login sebelumnya
+        val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
+        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
+        if (isLoggedIn) {
+            // User sudah login, langsung ke BerandaActivity
+            startActivity(Intent(this, BerandaActivity::class.java))
+            finish()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login) // pakai file layout yg kamu kasih tadi
@@ -74,14 +86,12 @@ class LoginActivity : AppCompatActivity() {
                                 putString("username", user.getString("username"))
                                 putString("email", user.getString("email"))
                                 putString("photo", user.optString("photo", ""))
+                                putBoolean("isLoggedIn", true) // <-- tambahkan ini
                                 apply()
                             }
 
-                            startActivity(Intent(this@LoginActivity, ProfileActivity::class.java))
-                            finish()
-
                             Toast.makeText(this@LoginActivity, "Login sukses!", Toast.LENGTH_SHORT).show()
-                            // pindah ke halaman utama (contoh MainActivity)
+                            // pindah ke halaman utama (contoh BerandaActivity)
                             startActivity(Intent(this@LoginActivity, BerandaActivity::class.java))
                             finish()
                         } else {

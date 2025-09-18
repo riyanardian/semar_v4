@@ -30,14 +30,15 @@
                 android:text="Welcome, Riyan!!"
                 android:textStyle="bold"
                 android:textColor="#5B2DBA"
-                android:textSize="18sp" />
+                android:textSize="20sp" />
 
             <TextView
+                android:id="@+id/tvGreeting"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Good night..."
                 android:textColor="#000000"
-                android:textSize="14sp" />
+                android:textSize="18sp" />
         </LinearLayout>
 
         <!-- Profile & Add Button -->
@@ -52,6 +53,7 @@
                 android:layout_marginTop="12dp"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
                 android:backgroundTint="#5B2DBA"
                 android:contentDescription="add"
                 android:src="@drawable/icon_user"
@@ -72,7 +74,7 @@
             android:id="@+id/btnManual"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Manual"
+            android:text="  Manual  "
             android:backgroundTint="#5B2DBA"
             android:textColor="#FFFFFF"
             android:layout_marginEnd="8dp"
@@ -87,7 +89,7 @@
             android:backgroundTint="#5B2DBA"
             android:textColor="#FFFFFF"
             android:background="@drawable/bg_card"
-            android:layout_marginRight="130dp"/>
+            android:layout_marginRight="87dp"/>
 
         <ImageView
             android:id="@+id/btnTambahDevice"

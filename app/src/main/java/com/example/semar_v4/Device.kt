@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -15,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import okhttp3.*
 import org.eclipse.paho.client.mqttv3.*
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
@@ -48,6 +50,13 @@ class Device : AppCompatActivity() {
 
         // Cek permission
         checkPermissions()
+        val userEmail = intent.getStringExtra("userEmail") ?: ""
+        val userPassword = intent.getStringExtra("userPassword") ?: ""
+        checkAdmin(userEmail, userPassword) { isAdmin ->
+            btnSetWifi.isEnabled = isAdmin
+            btnSetWifi.alpha = if (isAdmin) 1f else 0.5f
+            btnAddDevice.isEnabled = true
+        }
 
         btnAddDevice.setOnClickListener {
             fetchDevicesFromServer { devices ->
@@ -199,7 +208,7 @@ class Device : AppCompatActivity() {
             .build()
 
         val request = Request.Builder()
-            .url("http://192.168.101.77/device.php")
+            .url("http://103.197.190.79/api_mysql/device.php")
             .post(formBody)
             .build()
 
@@ -317,31 +326,83 @@ class Device : AppCompatActivity() {
     private fun fetchDevicesFromServer(onResult: (List<JSONObject>) -> Unit) {
         val client = OkHttpClient()
         val request = Request.Builder()
-            .url("http://192.168.101.77/get_devices.php") // ganti sesuai IP server
+            .url("http://103.197.190.79/api_mysql/get_devices.php") // ganti sesuai IP server
             .get()
             .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
-                    Toast.makeText(this@Device, "Gagal ambil data", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@Device, "❌ Gagal ambil data: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
+                Log.e("API_ERROR", "Gagal ambil data", e)
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     val body = it.body?.string() ?: "[]"
-                    val arr = org.json.JSONArray(body)
-                    val list = mutableListOf<JSONObject>()
-                    for (i in 0 until arr.length()) {
-                        list.add(arr.getJSONObject(i))
-                    }
-                    runOnUiThread {
-                        onResult(list)
+                    Log.d("API_RESPONSE", body) // debug respon asli
+
+                    try {
+                        val list = mutableListOf<JSONObject>()
+
+                        // cek dulu responnya array atau object
+                        if (body.trim().startsWith("[")) {
+                            val arr = JSONArray(body)
+                            for (i in 0 until arr.length()) {
+                                list.add(arr.getJSONObject(i))
+                            }
+                        } else if (body.trim().startsWith("{")) {
+                            val obj = JSONObject(body)
+                            // misal kalau server balikin {"devices":[...]}
+                            if (obj.has("devices")) {
+                                val arr = obj.getJSONArray("devices")
+                                for (i in 0 until arr.length()) {
+                                    list.add(arr.getJSONObject(i))
+                                }
+                            }
+                        }
+
+                        runOnUiThread {
+                            onResult(list)
+                        }
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            Toast.makeText(this@Device, "⚠️ Error parsing JSON", Toast.LENGTH_SHORT).show()
+                        }
+                        Log.e("API_PARSE_ERROR", "Respon bukan JSON valid", e)
                     }
                 }
             }
         })
     }
+    private fun checkAdmin(email: String, password: String, callback: (Boolean) -> Unit) {
+        val url = "http://103.197.190.79/api_mysql/admin_device.php"
+
+        val formBody = FormBody.Builder()
+            .add("email", email)
+            .add("password", password)
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .post(formBody)
+            .build()
+
+        OkHttpClient().newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread { callback(false) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.body?.string()?.let { body ->
+                    val json = JSONObject(body)
+                    val isAdmin = json.getBoolean("isAdmin")
+                    runOnUiThread { callback(isAdmin) }
+                } ?: runOnUiThread { callback(false) }
+            }
+        })
+    }
+
 
 }

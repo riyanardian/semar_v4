@@ -1,5 +1,6 @@
 package com.example.semar_v4
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -7,8 +8,7 @@ import android.os.Looper
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.NumberPicker
-import android.widget.RadioButton
+import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.Spinner
 import android.widget.TimePicker
@@ -19,6 +19,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,14 +32,18 @@ import java.util.*
 class Jadwal : AppCompatActivity() {
 
     private lateinit var recyclerJadwal: RecyclerView
+    private lateinit var btnBack: ImageView
     private lateinit var btnTambah: Button
     private lateinit var adapter: JadwalAdapter
     private val listJadwal = mutableListOf<JadwalModel>()
 
-    private lateinit var mqttClient: MqttClient
-    private val brokerUrl = "tcp://test.mosquitto.org:1883"
 
     private val handler = Handler(Looper.getMainLooper())
+
+    // SharedPreferences
+    private val sharedPref by lazy {
+        getSharedPreferences("jadwal_prefs", MODE_PRIVATE)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,30 +59,24 @@ class Jadwal : AppCompatActivity() {
 
         recyclerJadwal = findViewById(R.id.recyclerJadwal)
         btnTambah = findViewById(R.id.btnTambahJadwal)
+        btnBack = findViewById(R.id.btnBack)
 
-        adapter = JadwalAdapter(listJadwal)
+        adapter = JadwalAdapter(listJadwal) { position ->
+            // hapus item dari list
+            listJadwal.removeAt(position)
+            adapter.notifyItemRemoved(position)
+            saveJadwal() // simpan setelah hapus
+        }
         recyclerJadwal.layoutManager = LinearLayoutManager(this)
         recyclerJadwal.adapter = adapter
 
+        // load jadwal tersimpan
+        loadJadwal()
+        adapter.notifyDataSetChanged()
+
         btnTambah.setOnClickListener { showBottomSheetTambah() }
-
-        // inisialisasi MQTT
-        initMqtt()
-
-        // mulai loop pengecekan jadwal tiap 1 menit
-        startJadwalChecker()
-    }
-
-    private fun initMqtt() {
-        val clientId = MqttClient.generateClientId()
-        mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                mqttClient.connect()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        // ke Jadwal
+        btnBack.setOnClickListener { startActivity(Intent(this, BerandaActivity::class.java)) }
     }
 
     private fun showBottomSheetTambah() {
@@ -135,6 +135,7 @@ class Jadwal : AppCompatActivity() {
             }
 
             adapter.notifyDataSetChanged()
+            saveJadwal() // simpan setelah menambah jadwal
             bottomSheet.dismiss()
         }
 
@@ -142,47 +143,21 @@ class Jadwal : AppCompatActivity() {
     }
 
 
-
-    private fun startJadwalChecker() {
-        var lastCheckedMinute = -1
-
-        handler.post(object : Runnable {
-            override fun run() {
-                val calendar = Calendar.getInstance()
-                val day = calendar.get(Calendar.DAY_OF_WEEK)
-                val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                val minute = calendar.get(Calendar.MINUTE)
-
-                if (minute != lastCheckedMinute) {
-                    lastCheckedMinute = minute
-                    listJadwal.forEach { jadwal ->
-                        if (!jadwal.executedToday &&
-                            jadwal.dayOfWeek == day &&
-                            jadwal.hour == hour &&
-                            jadwal.minute == minute
-                        ) {
-                            publishMqtt(jadwal.relay, jadwal.status)
-                            jadwal.executedToday = true
-                        }
-                    }
-                }
-
-                handler.postDelayed(this, 1000)
-            }
-        })
+    // ----------- penyimpanan -----------
+    private fun saveJadwal() {
+        val gson = Gson()
+        val json = gson.toJson(listJadwal)
+        sharedPref.edit().putString("list_jadwal", json).apply()
     }
 
-    private fun publishMqtt(relay: String, status: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                if (mqttClient.isConnected) {
-                    val topic = "device/$relay/status"
-                    val message = MqttMessage(status.toByteArray()).apply { qos = 1 }
-                    mqttClient.publish(topic, message)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    private fun loadJadwal() {
+        val gson = Gson()
+        val json = sharedPref.getString("list_jadwal", null)
+        if (json != null) {
+            val type = object : TypeToken<MutableList<JadwalModel>>() {}.type
+            val loadedList: MutableList<JadwalModel> = gson.fromJson(json, type)
+            listJadwal.clear()
+            listJadwal.addAll(loadedList)
         }
     }
 

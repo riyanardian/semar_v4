@@ -1,83 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <!-- Background Blur -->
-    <ImageView
-        android:id="@+id/bgImage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bg_login"
-        android:alpha="0.9" />
-
-    <!-- Form Login -->
-
-    <!-- Tombol Daftar (selalu di bawah layar) -->
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F6FA"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:id="@+id/main">
 
     <LinearLayout
-        android:id="@+id/loginForm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/btnReg"
-        android:layout_marginBottom="110dp"
-        android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:gravity="center_horizontal"
+        android:layout_marginTop="50dp"
+        android:background="@android:color/transparent">
 
         <!-- Logo -->
         <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="32dp"
-            android:src="@drawable/ic_launcher_foreground" />
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/logo"
+            android:layout_marginBottom="100dp" />
 
-        <!-- Email -->
-        <EditText
-            android:id="@+id/inputEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="@android:drawable/edit_text"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
-            android:padding="12dp" />
+            <!-- Email -->
 
-        <!-- Password -->
-        <EditText
-            android:id="@+id/inputPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:background="@android:drawable/edit_text"
-            android:hint="Password"
-            android:inputType="textPassword"
-            android:padding="12dp" />
+            <!-- Password -->
+            <EditText
+                android:id="@+id/inputEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@android:drawable/edit_text"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:padding="12dp" />
 
-        <!-- Tombol Login -->
-        <Button
-            android:id="@+id/btnLogin"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/teal_700"
-            android:text="Login"
-            android:textColor="@android:color/white" />
+            <EditText
+                android:id="@+id/inputPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:background="@android:drawable/edit_text"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:padding="12dp" />
 
+            <!-- Tombol Login -->
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/purple_500"
+                android:text="Login"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="25dp"
+                android:background="@drawable/bg_card"
+                />
+
+            <!-- Tombol Daftar -->
+            <Button
+                android:id="@+id/btnReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/purple_500"
+                android:text="Daftar"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_card"
+                />
+
+
+            <!-- Logo -->
+            <ImageView
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginTop="30dp"
+                android:src="@drawable/logo_text" />
     </LinearLayout>
-
-    <Button
-        android:id="@+id/btnReg"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginBottom="65dp"
-        android:backgroundTint="@android:color/white"
-        android:text="Daftar"
-        android:textColor="@color/black" />
-
-
-
-</RelativeLayout>
+</LinearLayout>

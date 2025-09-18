@@ -5,39 +5,37 @@
     android:layout_height="match_parent"
     android:background="#F4F4F4"
     android:orientation="vertical"
-    android:padding="16dp"
     android:id="@+id/main">
 
     <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:background="#805B2DBA"
+        >
 
-        <ImageButton
+        <!-- Tombol Back -->
+        <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/icon_kembali"
-            android:contentDescription="Back" />
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/icon_kembali"
+            android:contentDescription="Back"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="110dp"
+            android:layout_marginRight="110dp"
             android:text="Jadwal"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_gravity="center" />
+            android:textSize="20sp"
+            android:layout_gravity="center"
+            />
 
-        <ImageButton
-            android:id="@+id/btnAddTop"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/icon_tambah"
-            android:contentDescription="Tambah"
-            android:minWidth="60dp"
-            android:minHeight="60dp"/>
     </LinearLayout>
 
     <!-- List Jadwal -->
@@ -51,13 +49,15 @@
     <!-- Tombol Tambah Jadwal -->
     <Button
         android:id="@+id/btnTambahJadwal"
-        android:layout_width="match_parent"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:text="Tambah Jadwal"
+        android:layout_marginBottom="25dp"
+        android:background="@drawable/bg_card"
         android:backgroundTint="#673AB7"
-        android:textColor="@android:color/white"
-        android:layout_marginTop="12dp"
         android:minWidth="60dp"
-        android:minHeight="60dp"/>
+        android:minHeight="60dp"
+        android:text="Tambah Jadwal"
+        android:textColor="@android:color/white"
+        android:layout_gravity="center"/>
 
 </LinearLayout>

@@ -16,10 +16,11 @@
         android:text="Relay 1 - Senin 07:00"
         android:textSize="16sp" />
 
-    <Switch
-        android:id="@+id/switchEnable"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minHeight="60dp"
-        android:minWidth="60dp"/>
+    <ImageView
+        android:id="@+id/btnDeleteDevice"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:contentDescription="Delete Device"
+        android:src="@drawable/sampah" />
 </LinearLayout>

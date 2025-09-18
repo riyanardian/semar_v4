@@ -72,7 +72,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
-<<<<<<< HEAD
     implementation ("com.android.volley:volley:1.2.1")
     implementation ("com.google.code.gson:gson:2.10.1")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
@@ -81,11 +80,11 @@ dependencies {
     implementation ("com.github.bumptech.glide:glide:4.12.0")
     annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
     implementation ("de.hdodenhof:circleimageview:3.1.0")
-=======
     implementation ("androidx.recyclerview:recyclerview:1.2.1")
     implementation ("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation ("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
->>>>>>> 975eb3e (tambahan BANYAK)
+    implementation ("com.google.code.gson:gson:2.10.1")
+
 
 
 }
