@@ -40,7 +40,6 @@ class Device : AppCompatActivity() {
         btnBack = findViewById(R.id.btnBack)
         btnAddDevice = findViewById(R.id.btnAddDevice)
 
-        btnSetWifi.setOnClickListener { showSetWifiDialog() }
         btnBack.setOnClickListener {
             startActivity(Intent(this, BerandaActivity::class.java))
             finish()
@@ -48,15 +47,23 @@ class Device : AppCompatActivity() {
 
         initializeMqtt()
 
-        // Cek permission
-        checkPermissions()
-        val userEmail = intent.getStringExtra("userEmail") ?: ""
-        val userPassword = intent.getStringExtra("userPassword") ?: ""
-        checkAdmin(userEmail, userPassword) { isAdmin ->
-            btnSetWifi.isEnabled = isAdmin
-            btnSetWifi.alpha = if (isAdmin) 1f else 0.5f
-            btnAddDevice.isEnabled = true
+        // 🔹 Ambil hak istimewa admin
+        val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
+        val isAdmin = sharedPref.getBoolean("isAdmin", false)
+
+        // 🔹 Hanya admin yang bisa akses set Wi-Fi
+        btnSetWifi.isEnabled = isAdmin
+        btnSetWifi.setOnClickListener {
+            if (isAdmin) {
+                showSetWifiDialog()
+            } else {
+                Toast.makeText(this, "Hanya admin yang bisa mengatur Wi-Fi", Toast.LENGTH_SHORT).show()
+            }
         }
+
+// contoh enable tombol set Wi-Fi
+        btnSetWifi.isEnabled = isAdmin
+
 
         btnAddDevice.setOnClickListener {
             fetchDevicesFromServer { devices ->
@@ -376,33 +383,7 @@ class Device : AppCompatActivity() {
             }
         })
     }
-    private fun checkAdmin(email: String, password: String, callback: (Boolean) -> Unit) {
-        val url = "http://103.197.190.79/api_mysql/admin_device.php"
 
-        val formBody = FormBody.Builder()
-            .add("email", email)
-            .add("password", password)
-            .build()
-
-        val request = Request.Builder()
-            .url(url)
-            .post(formBody)
-            .build()
-
-        OkHttpClient().newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread { callback(false) }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.body?.string()?.let { body ->
-                    val json = JSONObject(body)
-                    val isAdmin = json.getBoolean("isAdmin")
-                    runOnUiThread { callback(isAdmin) }
-                } ?: runOnUiThread { callback(false) }
-            }
-        })
-    }
 
 
 }

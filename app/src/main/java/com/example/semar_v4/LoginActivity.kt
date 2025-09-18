@@ -90,6 +90,9 @@ class LoginActivity : AppCompatActivity() {
                                 putBoolean("isLoggedIn", true) // <-- tambahkan ini
 
                                 putString("bio", user.optString("bio", ""))
+                                // 🔹 Simpan hak istimewa admin
+                                val isAdmin = user.getBoolean("isAdmin")
+                                putBoolean("isAdmin", isAdmin)
 
                                 apply()
                             }
