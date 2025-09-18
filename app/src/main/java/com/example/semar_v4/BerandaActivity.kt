@@ -24,9 +24,6 @@ import okhttp3.*
 import org.json.JSONObject
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.io.IOException
 
 class BerandaActivity : AppCompatActivity() {
@@ -38,7 +35,6 @@ class BerandaActivity : AppCompatActivity() {
     private lateinit var jadwal: ImageView
     private lateinit var histori: ImageView
     private lateinit var recyclerView: RecyclerView
-    private lateinit var tvGreeting: TextView
     private lateinit var profileImage: CircleImageView
     private lateinit var welcomeText: TextView
 
@@ -68,7 +64,6 @@ class BerandaActivity : AppCompatActivity() {
 
 
         recyclerView.layoutManager = LinearLayoutManager(this)
-        tvGreeting = findViewById(R.id.tvGreeting)
 
         // padding sesuai sistem bar
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -77,13 +72,10 @@ class BerandaActivity : AppCompatActivity() {
             insets
         }
 
-        setGreeting()
-
         // SharedPreferences
         val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
         val deviceCount = sharedPref.getInt("deviceCount", 0)
 
-        // load device dari SharedPreferences
         // Ambil id user dari session untuk load foto
         val sharedUser = getSharedPreferences("user_session", Context.MODE_PRIVATE)
         val userId = sharedUser.getInt("id", 0)
@@ -143,16 +135,15 @@ class BerandaActivity : AppCompatActivity() {
                 val name = sharedPref.getString("device_${i}_name", null)
                 val type = sharedPref.getString("device_${i}_type", null)
                 val chip = sharedPref.getString("device_${i}_chip", null)
+
                 if (!name.isNullOrEmpty() && !type.isNullOrEmpty() && !chip.isNullOrEmpty()) {
                     devices.add(DeviceModel(name, type, chip))
                 }
             }
 
+            // inisialisasi adapter
             adapter = DeviceAdapter(devices,
                 onClick = { device -> showDeviceDetail(device) },
-                onSwitchChanged = { _, _ -> /* Kosong */ }
-            )
-            recyclerView.adapter = adapter
                 onSwitchChanged = { _, _ -> }
             )
             recyclerView.adapter = adapter
@@ -176,50 +167,13 @@ class BerandaActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
         }
 
-        // pilih device pertama sebagai default jika belum ada yang dipilih
-        val deviceDipilih = getSelectedDevice() ?: devices.firstOrNull()?.also { device ->
-            sharedPref.edit().apply {
-                putString("selected_name", device.name)
-                putString("selected_type", device.type)
-                putString("selected_chip", device.chipId)
-                apply()
-            }
-        }
-
-        // setup tombol Manual & Otomatis berdasarkan device terpilih
-        setupControlButtons()
-
-        // MQTT
-        val brokerUrl = "tcp://test.mosquitto.org:1883"
-        val clientId = MqttClient.generateClientId()
-        mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
-        Thread {
-            try {
-                mqttClient.connect()
-                devices.forEach { device ->
-                    val topicStatus = "device/${device.chipId}/status"
-                    mqttClient.subscribe(topicStatus) { _, message ->
-                        val isOn = message.toString() == "ON"
-                        runOnUiThread { adapter.updateDeviceStatus(device.chipId, isOn) }
-                    }
-
-                    val topicRunhour = "device/${device.chipId}/runhour2"
-                    mqttClient.subscribe(topicRunhour) { _, message ->
-                        val runhour = "${message} jam"
-                        runOnUiThread { adapter.updateDeviceRunhour(device.chipId, runhour) }
-                    }
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }.start()
+        // tombol manual & otomatis
+        btnManual.setOnClickListener { replaceFragment(ManualFragment()) }
+        btnOtomatis.setOnClickListener { replaceFragment(OtomatisFragment()) }
 
         // tambah device
         device.setOnClickListener { startActivity(Intent(this, Device::class.java)) }
 
-        // ke ProfileActivity
-        findViewById<ImageView>(R.id.btnAccount).setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-        // ke Jadwal
         // buka ProfileActivity saat klik icon account
         val btnAccount = findViewById<ImageView>(R.id.btnAccount)
         btnAccount.setOnClickListener {
@@ -235,7 +189,8 @@ class BerandaActivity : AppCompatActivity() {
 
         // ke jadwal
         jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
-        // ke Histori
+
+        // ke histori
         histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
     }
     override fun onResume() {
@@ -259,74 +214,13 @@ class BerandaActivity : AppCompatActivity() {
             .commit()
     }
 
-    private fun setupControlButtons() {
-        val deviceDipilih = getSelectedDevice()
-
-        if (deviceDipilih == null) {
-            // Belum ada device terpilih → tombol nonaktif
-            btnManual.isEnabled = false
-            btnOtomatis.isEnabled = false
-            btnManual.backgroundTintList = getColorStateList(R.color.gray)
-            btnOtomatis.backgroundTintList = getColorStateList(R.color.gray)
-        } else {
-            // Device terpilih → tombol Manual aktif, Otomatis nonaktif
-            btnManual.isEnabled = true
-            btnOtomatis.isEnabled = true
-            btnManual.backgroundTintList = getColorStateList(R.color.purple_700)
-            btnOtomatis.backgroundTintList = getColorStateList(R.color.gray)
-
-            // Klik Manual
-            btnManual.setOnClickListener {
-                val fragment = ManualFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("deviceName", deviceDipilih.name)
-                        putString("deviceType", deviceDipilih.type)
-                        putString("chipId", deviceDipilih.chipId)
-                    }
-                }
-                replaceFragment(fragment)
-                btnManual.backgroundTintList = getColorStateList(R.color.purple_700)
-                btnOtomatis.backgroundTintList = getColorStateList(R.color.gray)
-            }
-
-            // Klik Otomatis
-            btnOtomatis.setOnClickListener {
-                val fragment = OtomatisFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("deviceName", deviceDipilih.name)
-                        putString("deviceType", deviceDipilih.type)
-                        putString("chipId", deviceDipilih.chipId)
-                    }
-                }
-                replaceFragment(fragment)
-                btnOtomatis.backgroundTintList = getColorStateList(R.color.purple_700)
-                btnManual.backgroundTintList = getColorStateList(R.color.gray)
-            }
-        }
-    }
-
-    private fun getSelectedDevice(): DeviceModel? {
-        val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
-        val name = sharedPref.getString("selected_name", null)
-        val type = sharedPref.getString("selected_type", null)
-        val chip = sharedPref.getString("selected_chip", null)
-        return if (!name.isNullOrEmpty() && !type.isNullOrEmpty() && !chip.isNullOrEmpty()) {
-            DeviceModel(name, type, chip)
-        } else null
-    }
-
     private fun showDeviceDetail(device: DeviceModel) {
         AlertDialog.Builder(this)
             .setTitle(device.name)
-            .setMessage("📌 Spesifikasi:\nTipe: ${device.type}\nChip ID: ${device.chipId}\n\nKlik OK untuk masuk kontrol.")
+            .setMessage(
+                "📌 Spesifikasi:\nTipe: ${device.type}\nChip ID: ${device.chipId}\n\nKlik OK untuk masuk kontrol."
+            )
             .setPositiveButton("OK") { _, _ ->
-                val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
-                sharedPref.edit().apply {
-                    putString("selected_name", device.name)
-                    putString("selected_type", device.type)
-                    putString("selected_chip", device.chipId)
-                    apply()
-                }
                 val fragment = ManualFragment().apply {
                     arguments = Bundle().apply {
                         putString("deviceName", device.name)
@@ -335,7 +229,6 @@ class BerandaActivity : AppCompatActivity() {
                     }
                 }
                 replaceFragment(fragment)
-                setupControlButtons()
             }
             .setNegativeButton("Batal", null)
             .show()
@@ -351,9 +244,6 @@ class BerandaActivity : AppCompatActivity() {
             val name = sharedPref.getString("device_${i}_name", "") ?: ""
             val type = sharedPref.getString("device_${i}_type", "") ?: ""
             val chip = sharedPref.getString("device_${i}_chip", "") ?: ""
-            if (i - 1 != position) newList.add(Triple(name, type, chip))
-        }
-        editor.clear()
 
             if (i - 1 != position) {
                 newList.add(Triple(name, type, chip))
@@ -375,29 +265,6 @@ class BerandaActivity : AppCompatActivity() {
         devices.removeAt(position)
         adapter.notifyItemRemoved(position)
 
-        // jika device yang dipilih dihapus, pilih device pertama yang tersisa
-        if (getSelectedDevice() == null && devices.isNotEmpty()) {
-            val first = devices.first()
-            sharedPref.edit().apply {
-                putString("selected_name", first.name)
-                putString("selected_type", first.type)
-                putString("selected_chip", first.chipId)
-                apply()
-            }
-            setupControlButtons()
-        }
-    }
-
-    private fun setGreeting() {
-        val jam = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
-        val greeting = when (jam) {
-            in 0..5 -> "Good Night..."
-            in 6..11 -> "Good Morning..."
-            in 12..15 -> "Good Afternoon..."
-            in 16..18 -> "Good Evening..."
-            else -> "Good Night..."
-        }
-        tvGreeting.text = greeting
 
     }
 
