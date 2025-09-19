@@ -6,5 +6,7 @@ data class JadwalModel(
     val hour: Int,
     val minute: Int,
     val status: String, // "ON" atau "OFF"
-    var executedToday: Boolean = false
+    var executedToday: Boolean = false,
+    var enabled: Boolean = true // switch per-jadwal
+
 )

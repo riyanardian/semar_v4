@@ -34,7 +34,6 @@ class OtomatisFragment : Fragment() {
     private val listJadwal = mutableListOf<JadwalModel>()
     private lateinit var btnBack: ImageView
 
-
     private lateinit var switchSchedule: Switch
     private val handler = Handler(Looper.getMainLooper())
 
@@ -42,6 +41,7 @@ class OtomatisFragment : Fragment() {
     private val brokerUrl = "tcp://test.mosquitto.org:1883"
 
     private var lastCheckedMinute = -1
+    private var lastCheckedDay = -1
     private var isRunning = false
 
     override fun onCreateView(
@@ -54,18 +54,19 @@ class OtomatisFragment : Fragment() {
         recyclerJadwal = view.findViewById(R.id.recyclerJadwal)
         btnBack = view.findViewById(R.id.btnBack)
 
+        adapter = JadwalAdapter(
+            listJadwal,
+            onDeleteClick = { position ->
+                listJadwal.removeAt(position)
+                adapter.notifyItemRemoved(position)
+                saveJadwal()
+            },
+            onSwitchChange = { position, enabled ->
+                listJadwal[position].enabled = enabled
+                saveJadwal()
+            }
+        )
 
-        // setup RecyclerView
-        adapter = JadwalAdapter(listJadwal) { position ->
-            val removed = listJadwal.removeAt(position)
-            adapter.notifyItemRemoved(position)
-
-            val gson = Gson()
-            val json = gson.toJson(listJadwal)
-            sharedPref.edit().putString("list_jadwal", json).apply()
-
-            Toast.makeText(requireContext(), "Jadwal dihapus", Toast.LENGTH_SHORT).show()
-        }
         recyclerJadwal.layoutManager = LinearLayoutManager(requireContext())
         recyclerJadwal.adapter = adapter
         recyclerJadwal.visibility = View.GONE
@@ -108,6 +109,12 @@ class OtomatisFragment : Fragment() {
         requireContext().getSharedPreferences("jadwal_prefs", AppCompatActivity.MODE_PRIVATE)
     }
 
+    private fun saveJadwal() {
+        val gson = Gson()
+        val json = gson.toJson(listJadwal)
+        sharedPref.edit().putString("list_jadwal", json).apply()
+    }
+
     private fun loadJadwal() {
         val gson = Gson()
         val json = sharedPref.getString("list_jadwal", null)
@@ -147,10 +154,17 @@ class OtomatisFragment : Fragment() {
                 val hour = calendar.get(Calendar.HOUR_OF_DAY)
                 val minute = calendar.get(Calendar.MINUTE)
 
+                // reset executedToday tiap hari baru
+                if (day != lastCheckedDay) {
+                    listJadwal.forEach { it.executedToday = false }
+                    lastCheckedDay = day
+                }
+
                 if (minute != lastCheckedMinute) {
                     lastCheckedMinute = minute
                     listJadwal.forEach { jadwal ->
                         if (!jadwal.executedToday &&
+                            jadwal.enabled && // hanya kirim kalau switch per-jadwal aktif
                             jadwal.dayOfWeek == day &&
                             jadwal.hour == hour &&
                             jadwal.minute == minute

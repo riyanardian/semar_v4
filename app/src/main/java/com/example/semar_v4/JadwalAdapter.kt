@@ -4,17 +4,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.Switch
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class JadwalAdapter(
     private val listJadwal: MutableList<JadwalModel>,
-    private val onDeleteClick: (position: Int) -> Unit
+    private val onDeleteClick: (position: Int) -> Unit,
+    private val onSwitchChange: (Int, Boolean) -> Unit,
+
 ) : RecyclerView.Adapter<JadwalAdapter.JadwalViewHolder>() {
 
     inner class JadwalViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvJadwal: TextView = itemView.findViewById(R.id.tvJadwal)
         val btnDeleteDevice: ImageView = itemView.findViewById(R.id.btnDeleteDevice)
+        val switchEnable: Switch = itemView.findViewById(R.id.switchEnable) // switch per-jadwal
 
         fun bind(jadwal: JadwalModel) {
             val dayName = when (jadwal.dayOfWeek) {
@@ -36,6 +40,7 @@ class JadwalAdapter(
                     onDeleteClick(pos)
                 }
             }
+
         }
     }
 
@@ -47,6 +52,12 @@ class JadwalAdapter(
 
     override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
         holder.bind(listJadwal[position])
+        val jadwal = listJadwal[position]
+
+        holder.switchEnable.isChecked = jadwal.enabled
+        holder.switchEnable.setOnCheckedChangeListener { _, isChecked ->
+            onSwitchChange(position, isChecked)
+        }
     }
 
     override fun getItemCount(): Int = listJadwal.size

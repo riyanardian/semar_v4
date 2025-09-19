@@ -1,5 +1,6 @@
 package com.example.semar_v4
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -9,8 +10,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -22,9 +23,8 @@ import com.example.semar_v4.header.OtomatisFragment
 import de.hdodenhof.circleimageview.CircleImageView
 import okhttp3.*
 import org.json.JSONObject
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.io.IOException
+import java.util.*
 
 class BerandaActivity : AppCompatActivity() {
 
@@ -37,21 +37,47 @@ class BerandaActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var profileImage: CircleImageView
     private lateinit var welcomeText: TextView
-
+    private lateinit var tvGreeting: TextView
 
     private val devices = mutableListOf<DeviceModel>()
-    private lateinit var adapter: DeviceAdapter
-    private lateinit var mqttClient: MqttClient
-
+    private var adapter: DeviceAdapter? = null
     private val BASE_URL = "http://103.197.190.79/api_mysql"
     private val client = OkHttpClient()
+
+    private val localReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.let {
+                val chipId = it.getStringExtra("chipId") ?: return
+                val type = it.getStringExtra("type") ?: return
+                val value = it.getStringExtra("value") ?: return
+
+                // update UI hanya jika adapter sudah siap
+                adapter?.updateDevice(chipId, type, value)
+            }
+        }
+    }
+
+    private var selectedChip: String? = null
+    private var selectedDeviceName: String? = null
+    private var selectedDeviceType: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_beranda)
 
-        // inisialisasi view
+        initViews()
+        setupRecyclerView()
+        setGreeting()
+        registerBroadcast()
+        loadDevices()
+        restoreSelectedDevice()
+        setupControlButtons()
+        setupClickListeners()
+        loadUserSession()
+    }
+
+    private fun initViews() {
         btnManual = findViewById(R.id.btnManual)
         btnOtomatis = findViewById(R.id.btnOtomatis)
         layoutDefault = findViewById(R.id.layoutDefault)
@@ -61,197 +87,37 @@ class BerandaActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         profileImage = findViewById(R.id.profileImage)
         welcomeText = findViewById(R.id.welcomeText)
+        tvGreeting = findViewById(R.id.tvGreeting)
 
-
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        // padding sesuai sistem bar
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        // SharedPreferences
-        val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
-        val deviceCount = sharedPref.getInt("deviceCount", 0)
-
-        // Ambil id user dari session untuk load foto
-        val sharedUser = getSharedPreferences("user_session", Context.MODE_PRIVATE)
-        val userId = sharedUser.getInt("id", 0)
-        if (userId != 0) {
-            loadUserPhoto(userId)
-        } else {
-            profileImage.setImageResource(R.drawable.ic_user_placeholder)
-        }
-        // load nama awal dari session
-        val username = sharedUser.getString("username", "")
-        if (!username.isNullOrEmpty()) {
-            welcomeText.text = "Welcome, $username!!"
-        }
-
-        // MQTT
-        val brokerUrl = "tcp://test.mosquitto.org:1883"
-        val clientId = MqttClient.generateClientId()
-        mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
-
-        Thread {
-            try {
-                mqttClient.connect()
-
-                // subscribe status tiap device setelah connect
-                for (device in devices) {
-                    val topicStatus = "device/${device.chipId}/status"
-                    mqttClient.subscribe(topicStatus) { _, message ->
-                        val isOn = message.toString() == "ON"
-                        runOnUiThread {
-                            adapter.updateDeviceStatus(device.chipId, isOn)
-                        }
-                    }
-                }
-
-                // subscribe runhour relay 2
-                for (device in devices) {
-                    val topicRunhour = "device/${device.chipId}/runhour2"
-                    mqttClient.subscribe(topicRunhour) { _, message ->
-                        val runhour = message.toString() + " jam"
-                        runOnUiThread {
-                            adapter.updateDeviceRunhour(device.chipId, runhour)
-                        }
-                    }
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start()
-
-        // tampilkan device atau folder kosong
-        if (deviceCount > 0) {
-            layoutDefault.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
-
-            for (i in 1..deviceCount) {
-                val name = sharedPref.getString("device_${i}_name", null)
-                val type = sharedPref.getString("device_${i}_type", null)
-                val chip = sharedPref.getString("device_${i}_chip", null)
-
-                if (!name.isNullOrEmpty() && !type.isNullOrEmpty() && !chip.isNullOrEmpty()) {
-                    devices.add(DeviceModel(name, type, chip))
-                }
-            }
-
-            // inisialisasi adapter
-            adapter = DeviceAdapter(devices,
-                onClick = { device -> showDeviceDetail(device) },
-                onSwitchChanged = { _, _ -> }
-            )
-            recyclerView.adapter = adapter
-
-            // subscribe status tiap device untuk update switch otomatis
-            if (mqttClient.isConnected) {
-                for (device in devices) {
-                    val topicStatus = "device/${device.chipId}/status"
-                    mqttClient.subscribe(topicStatus) { _, message ->
-                        val isOn = message.toString() == "ON"
-                        runOnUiThread {
-                            adapter.updateDeviceStatus(device.chipId, isOn)
-                        }
-                    }
-                }
-            }
-
-            recyclerView.adapter = adapter
-        } else {
-            layoutDefault.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
-        }
-
-        // tombol manual & otomatis
-        btnManual.setOnClickListener { replaceFragment(ManualFragment()) }
-        btnOtomatis.setOnClickListener { replaceFragment(OtomatisFragment()) }
-
-        // tambah device
-        device.setOnClickListener { startActivity(Intent(this, Device::class.java)) }
-
-        // buka ProfileActivity saat klik icon account
-        val btnAccount = findViewById<ImageView>(R.id.btnAccount)
-        btnAccount.setOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java)
-            startActivity(intent)
-        }
-
-        // buka ProfileActivity juga saat klik foto profile di header
-        profileImage.setOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java)
-            startActivity(intent)
-        }
-
-        // ke jadwal
-        jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
-
-        // ke histori
-        histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
-    }
-    override fun onResume() {
-        super.onResume()
-        // setiap kali activity aktif lagi, refresh nama dan foto
-        val sharedUser = getSharedPreferences("user_session", MODE_PRIVATE)
-        val username = sharedUser.getString("username", "User")
-        welcomeText.text = "Welcome, $username!!"
-
-        val userId = sharedUser.getInt("id", 0)
-        if (userId != 0) {
-            loadUserPhoto(userId)
-        }
     }
 
-    private fun replaceFragment(fragment: Fragment) {
-        layoutDefault.visibility = View.GONE
-        recyclerView.visibility = View.GONE
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.bodyContainer, fragment)
-            .commit()
-    }
+    private fun setupRecyclerView() {
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = DeviceAdapter(devices,
+            onClick = { d -> showDeviceDetail(d) },
+            onSwitchChanged = { device, isChecked -> /* handle switch */ },
+            onDeleteClicked = { pos -> deleteDeviceAt(pos) }  // ✅ ini callback aman
+        )
+        recyclerView.adapter = adapter
 
-    private fun showDeviceDetail(device: DeviceModel) {
-        AlertDialog.Builder(this)
-            .setTitle(device.name)
-            .setMessage(
-                "📌 Spesifikasi:\nTipe: ${device.type}\nChip ID: ${device.chipId}\n\nKlik OK untuk masuk kontrol."
-            )
-            .setPositiveButton("OK") { _, _ ->
-                val fragment = ManualFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("deviceName", device.name)
-                        putString("deviceType", device.type)
-                        putString("chipId", device.chipId)
-                    }
-                }
-                replaceFragment(fragment)
-            }
-            .setNegativeButton("Batal", null)
-            .show()
     }
-
     fun deleteDeviceAt(position: Int) {
         val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
         val count = sharedPref.getInt("deviceCount", 0)
-
         val newList = mutableListOf<Triple<String, String, String>>()
         for (i in 1..count) {
             val name = sharedPref.getString("device_${i}_name", "") ?: ""
             val type = sharedPref.getString("device_${i}_type", "") ?: ""
             val chip = sharedPref.getString("device_${i}_chip", "") ?: ""
-
-            if (i - 1 != position) {
-                newList.add(Triple(name, type, chip))
-            }
+            if (i - 1 != position) newList.add(Triple(name, type, chip))
         }
-
         editor.clear()
-
         newList.forEachIndexed { index, triple ->
             val (name, type, chip) = triple
             val newIndex = index + 1
@@ -263,31 +129,178 @@ class BerandaActivity : AppCompatActivity() {
         editor.apply()
 
         devices.removeAt(position)
-        adapter.notifyItemRemoved(position)
+        adapter?.notifyItemRemoved(position)
+
+        // jika device yang dipilih dihapus, pilih device pertama yang tersisa
+        if (getSelectedDevice() == null && devices.isNotEmpty()) {
+            val first = devices.first()
+            sharedPref.edit().apply {
+                putString("selected_name", first.name)
+                putString("selected_type", first.type)
+                putString("selected_chip", first.chipId)
+                apply()
+            }
+            setupControlButtons()
+        }
+    }
 
 
+    private fun setGreeting() {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val greeting = when (hour) {
+            in 5..10 -> "Good Morning"
+            in 11..14 -> "Good Afternoon"
+            in 15..17 -> "Good Evening"
+            in 18..21 -> "Good Night"
+            else -> "Hello"
+        }
+        tvGreeting.text = greeting
+    }
+
+    private fun registerBroadcast() {
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+            .registerReceiver(localReceiver, android.content.IntentFilter("DEVICE_UPDATE"))
+    }
+
+    private fun loadDevices() {
+        val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
+        val deviceCount = sharedPref.getInt("deviceCount", 0)
+        if (deviceCount > 0) {
+            layoutDefault.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            devices.clear()
+            for (i in 1..deviceCount) {
+                val name = sharedPref.getString("device_${i}_name", "") ?: ""
+                val type = sharedPref.getString("device_${i}_type", "") ?: ""
+                val chip = sharedPref.getString("device_${i}_chip", "") ?: ""
+                if (name.isNotEmpty() && type.isNotEmpty() && chip.isNotEmpty())
+                    devices.add(DeviceModel(name, type, chip))
+            }
+            adapter?.notifyDataSetChanged()
+        } else {
+            layoutDefault.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        }
+    }
+
+    private fun restoreSelectedDevice() {
+        val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
+        val chip = sp.getString("selected_chip", null)
+        if (chip != null) {
+            val device = devices.firstOrNull { it.chipId == chip }
+            if (device != null) {
+                selectedChip = device.chipId
+                selectedDeviceName = device.name
+                selectedDeviceType = device.type
+                return
+            } else {
+                sp.edit().remove("selected_chip")
+                    .remove("selected_device_name")
+                    .remove("selected_device_type")
+                    .apply()
+            }
+        }
+        if (devices.isNotEmpty() && selectedChip == null) {
+            val first = devices.first()
+            sp.edit().apply {
+                putString("selected_chip", first.chipId)
+                putString("selected_device_name", first.name)
+                putString("selected_device_type", first.type)
+                apply()
+            }
+            selectedChip = first.chipId
+            selectedDeviceName = first.name
+            selectedDeviceType = first.type
+        }
+    }
+
+    private fun setupControlButtons() {
+        val selectedDevice = getSelectedDevice()
+        if (selectedDevice == null) {
+            disableControlButtons()
+        } else {
+            enableControlButtons()
+            btnManual.setOnClickListener {
+                openFragment(ManualFragment(), selectedDevice)
+                updateButtonColor(true)
+            }
+            btnOtomatis.setOnClickListener {
+                openFragment(OtomatisFragment(), selectedDevice)
+                updateButtonColor(false)
+            }
+        }
+    }
+
+    private fun disableControlButtons() {
+        btnManual.isEnabled = false
+        btnOtomatis.isEnabled = false
+        btnManual.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+        btnOtomatis.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+    }
+
+    private fun enableControlButtons() {
+        btnManual.isEnabled = true
+        btnOtomatis.isEnabled = true
+    }
+
+    private fun updateButtonColor(isManual: Boolean) {
+        if (isManual) {
+            btnManual.backgroundTintList = ContextCompat.getColorStateList(this, R.color.purple_700)
+            btnOtomatis.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+        } else {
+            btnManual.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+            btnOtomatis.backgroundTintList = ContextCompat.getColorStateList(this, R.color.purple_700)
+        }
+    }
+
+    private fun getSelectedDevice(): DeviceModel? {
+        val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
+        val chip = sp.getString("selected_chip", null) ?: return null
+        return devices.firstOrNull { it.chipId == chip }
+    }
+
+    private fun openFragment(fragment: Fragment, device: DeviceModel) {
+        fragment.arguments = Bundle().apply {
+            putString("deviceName", device.name)
+            putString("deviceType", device.type)
+            putString("chipId", device.chipId)
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.bodyContainer, fragment)
+            .commit()
+        layoutDefault.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+    }
+
+    private fun setupClickListeners() {
+        device.setOnClickListener { startActivity(Intent(this, Device::class.java)) }
+        val btnAccount = findViewById<ImageView>(R.id.btnAccount)
+        btnAccount.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
+        profileImage.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
+        jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
+        histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
+    }
+
+    private fun loadUserSession() {
+        val sharedUser = getSharedPreferences("user_session", MODE_PRIVATE)
+        val username = sharedUser.getString("username", "User")
+        welcomeText.text = "Welcome, $username!!"
+        val userId = sharedUser.getInt("id", 0)
+        if (userId != 0) loadUserPhoto(userId)
     }
 
     private fun loadUserPhoto(id: Int) {
-        val request = Request.Builder()
-            .url("$BASE_URL/get_profile.php?id=$id")
-            .build()
-
+        val request = Request.Builder().url("$BASE_URL/get_profile.php?id=$id").build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    profileImage.setImageResource(R.drawable.ic_user_placeholder)
-                }
+                runOnUiThread { profileImage.setImageResource(R.drawable.ic_user_placeholder) }
             }
-
             override fun onResponse(call: Call, response: Response) {
                 response.body?.string()?.let {
                     try {
                         val json = JSONObject(it)
                         if (json.getString("status") == "success") {
-                            val data = json.getJSONObject("data")
-                            val photo = data.optString("photo", "")
-
+                            val photo = json.getJSONObject("data").optString("photo", "")
                             runOnUiThread {
                                 if (photo.isNotEmpty() && photo != "null") {
                                     Glide.with(this@BerandaActivity)
@@ -295,19 +308,46 @@ class BerandaActivity : AppCompatActivity() {
                                         .placeholder(R.drawable.ic_user_placeholder)
                                         .error(R.drawable.ic_user_placeholder)
                                         .into(profileImage)
-                                } else {
-                                    profileImage.setImageResource(R.drawable.ic_user_placeholder)
-                                }
+                                } else profileImage.setImageResource(R.drawable.ic_user_placeholder)
                             }
                         }
-                    } catch (e: Exception) {
-                        runOnUiThread {
-                            profileImage.setImageResource(R.drawable.ic_user_placeholder)
-                        }
+                    } catch (_: Exception) {
+                        runOnUiThread { profileImage.setImageResource(R.drawable.ic_user_placeholder) }
                     }
                 }
             }
-
         })
+    }
+
+    private fun showDeviceDetail(device: DeviceModel) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(device.name)
+            .setMessage("📌 Spesifikasi:\nTipe: ${device.type}\nChip ID: ${device.chipId}\n\nKlik OK untuk masuk kontrol.")
+            .setPositiveButton("OK") { _, _ -> selectDevice(device) }
+            .setNegativeButton("Batal", null)
+            .show()
+    }
+
+    private fun selectDevice(device: DeviceModel) {
+        val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
+        sp.edit().apply {
+            putString("selected_chip", device.chipId)
+            putString("selected_device_name", device.name)
+            putString("selected_device_type", device.type)
+            apply()
+        }
+        selectedChip = device.chipId
+        selectedDeviceName = device.name
+        selectedDeviceType = device.type
+        enableControlButtons()
+        updateButtonColor(true)
+        openFragment(ManualFragment(), device)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // unregister broadcast
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+            .unregisterReceiver(localReceiver)
     }
 }

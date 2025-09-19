@@ -15,6 +15,12 @@
         android:layout_weight="1"
         android:text="Relay 1 - Senin 07:00"
         android:textSize="16sp" />
+    <Switch
+        android:id="@+id/switchEnable"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:minWidth="48dp"/>
 
     <ImageView
         android:id="@+id/btnDeleteDevice"

@@ -1,5 +1,6 @@
 package com.example.semar_v4.header
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,20 +10,17 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.semar_v4.R
-import org.eclipse.paho.android.service.MqttAndroidClient
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.IMqttToken
-import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
-import org.eclipse.paho.client.mqttv3.MqttException
-import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.eclipse.paho.client.mqttv3.*
 
 class ManualFragment : Fragment() {
 
-    private lateinit var mqttClient: MqttClient
+    companion object {
+        private var mqttClient: MqttClient? = null
+        private var isConnected = false
+    }
+
     private lateinit var tvRunhourRelay2: TextView
     private lateinit var tvStatusRelay1: TextView
     private lateinit var tvStatusRelay2: TextView
@@ -68,6 +66,11 @@ class ManualFragment : Fragment() {
     }
 
     private fun initMqtt() {
+        if (isConnected && mqttClient != null && mqttClient!!.isConnected) {
+            subscribeTopics()
+            return
+        }
+
         Thread {
             try {
                 mqttClient = MqttClient(brokerUri, MqttClient.generateClientId(), null)
@@ -78,20 +81,30 @@ class ManualFragment : Fragment() {
                     keepAliveInterval = 60
                 }
 
-                mqttClient.setCallback(object : MqttCallback {
+                mqttClient?.setCallback(object : MqttCallback {
                     override fun connectionLost(cause: Throwable?) {
                         requireActivity().runOnUiThread {
                             Toast.makeText(requireContext(), "Koneksi MQTT hilang", Toast.LENGTH_SHORT).show()
                         }
+                        isConnected = false
                     }
 
                     override fun messageArrived(topic: String?, message: MqttMessage?) {
                         val msg = message.toString()
                         requireActivity().runOnUiThread {
                             when (topic) {
-                                topicRunhour -> tvRunhourRelay2.text = "• Runhour Relay 2: $msg Jam"
-                                topicRelay1Status -> updateStatus(tvStatusRelay1, msg)
-                                topicRelay2Status -> updateStatus(tvStatusRelay2, msg)
+                                topicRunhour -> {
+                                    tvRunhourRelay2.text = "• Runhour Relay 2: $msg Jam"
+                                    broadcastToAllDevices("runhour", msg)
+                                }
+                                topicRelay1Status -> {
+                                    updateStatus(tvStatusRelay1, msg, "Relay 1")
+                                    broadcastToAllDevices("relay1", msg)
+                                }
+                                topicRelay2Status -> {
+                                    updateStatus(tvStatusRelay2, msg, "Relay 2")
+                                    broadcastToAllDevices("relay2", msg)
+                                }
                             }
                         }
                     }
@@ -99,8 +112,9 @@ class ManualFragment : Fragment() {
                     override fun deliveryComplete(token: IMqttDeliveryToken?) {}
                 })
 
-                mqttClient.connect(options)
+                mqttClient?.connect(options)
                 subscribeTopics()
+                isConnected = true
 
                 requireActivity().runOnUiThread {
                     Toast.makeText(requireContext(), "MQTT connected!", Toast.LENGTH_SHORT).show()
@@ -117,30 +131,33 @@ class ManualFragment : Fragment() {
 
     private fun subscribeTopics() {
         try {
-            mqttClient.subscribe(topicRunhour, 1)
-            mqttClient.subscribe(topicRelay1Status, 1)
-            mqttClient.subscribe(topicRelay2Status, 1)
+            mqttClient?.subscribe(topicRunhour, 1)
+            mqttClient?.subscribe(topicRelay1Status, 1)
+            mqttClient?.subscribe(topicRelay2Status, 1)
         } catch (e: MqttException) {
             e.printStackTrace()
         }
     }
 
-    private fun updateStatus(tv: TextView, msg: String) {
-        tv.text = if (msg == "ON") "• Status ${tv.id}: ON" else "• Status ${tv.id}: OFF"
+    private fun updateStatus(tv: TextView, msg: String, label: String) {
+        tv.text = "• Status $label: $msg"
         tv.setTextColor(
-            resources.getColor(if (msg == "ON") android.R.color.holo_green_dark else android.R.color.holo_red_dark)
+            resources.getColor(
+                if (msg == "ON") android.R.color.holo_green_dark
+                else android.R.color.holo_red_dark
+            )
         )
     }
 
     private fun publishMessage(topic: String, msg: String) {
         Thread {
             try {
-                if (mqttClient.isConnected) {
+                if (mqttClient != null && mqttClient!!.isConnected) {
                     val mqttMessage = MqttMessage(msg.toByteArray()).apply {
                         qos = 1
                         isRetained = true
                     }
-                    mqttClient.publish(topic, mqttMessage)
+                    mqttClient!!.publish(topic, mqttMessage)
                     requireActivity().runOnUiThread {
                         Toast.makeText(requireContext(), "Publish: $msg", Toast.LENGTH_SHORT).show()
                     }
@@ -155,8 +172,17 @@ class ManualFragment : Fragment() {
         }.start()
     }
 
+    // 🔹 Broadcast ke BerandaActivity untuk semua device
+    private fun broadcastToAllDevices(type: String, value: String) {
+        val intent = Intent("DEVICE_UPDATE") // samakan dengan BerandaActivity
+        intent.putExtra("chipId", chipId)
+        intent.putExtra("type", type)
+        intent.putExtra("value", value)
+        LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        try { if (mqttClient.isConnected) mqttClient.disconnect() } catch (_: Exception) {}
+        // jangan disconnect MQTT biar tetap hidup
     }
 }
