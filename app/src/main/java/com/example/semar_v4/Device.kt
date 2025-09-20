@@ -1,10 +1,10 @@
 package com.example.semar_v4
 
 import android.Manifest
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -14,24 +14,77 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.semar_v4.service.MqttService
 import okhttp3.*
-import org.eclipse.paho.client.mqttv3.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
 class Device : AppCompatActivity() {
+
     private val httpClient = OkHttpClient()
 
     private lateinit var btnSetWifi: Button
     private lateinit var btnBack: ImageView
     private lateinit var btnAddDevice: Button
 
-    // MQTT
-    private lateinit var mqttClient: MqttClient
-    private val mqttBroker = "tcp://test.mosquitto.org:1883"
+    private var mqttService: MqttService? = null
+    private var isBound = false
+
     private val topicRegister = "semar/devices/register"
 
+    // -------------------- SERVICE CONNECTION --------------------
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as MqttService.LocalBinder
+            mqttService = binder.getService()
+            isBound = true
+
+            // subscribe ke topik register
+            mqttService?.subscribeTopic(topicRegister)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mqttService = null
+            isBound = false
+        }
+    }
+
+    // -------------------- BROADCAST RECEIVER MQTT --------------------
+    private val mqttReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val topic = intent?.getStringExtra("topic")
+            val payload = intent?.getStringExtra("payload") ?: return
+
+            if (topic == topicRegister) {
+                try {
+                    val json = JSONObject(payload)
+                    val deviceName = json.optString("device_name", "Unknown")
+                    val deviceType = json.optString("device_type", "Unknown")
+                    val chipId = json.optString("chip_id", "N/A")
+
+                    saveDeviceToSharedPref(deviceName, deviceType, chipId)
+                    sendDeviceToServer(deviceName, deviceType, chipId)
+
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@Device,
+                            "Device diterima: $deviceName",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        val intent = Intent(this@Device, BerandaActivity::class.java)
+                        intent.putExtra("newDeviceName", deviceName)
+                        startActivity(intent)
+                        finish()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    // -------------------- ON CREATE --------------------
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_device)
@@ -40,18 +93,15 @@ class Device : AppCompatActivity() {
         btnBack = findViewById(R.id.btnBack)
         btnAddDevice = findViewById(R.id.btnAddDevice)
 
+        // tombol back
         btnBack.setOnClickListener {
             startActivity(Intent(this, BerandaActivity::class.java))
             finish()
         }
 
-        initializeMqtt()
-
-        // 🔹 Ambil hak istimewa admin
+        // cek admin privilege
         val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
         val isAdmin = sharedPref.getBoolean("isAdmin", false)
-
-        // 🔹 Hanya admin yang bisa akses set Wi-Fi
         btnSetWifi.isEnabled = isAdmin
         btnSetWifi.setOnClickListener {
             if (isAdmin) {
@@ -61,10 +111,7 @@ class Device : AppCompatActivity() {
             }
         }
 
-// contoh enable tombol set Wi-Fi
-        btnSetWifi.isEnabled = isAdmin
-
-
+        // tombol add device
         btnAddDevice.setOnClickListener {
             fetchDevicesFromServer { devices ->
                 if (devices.isEmpty()) {
@@ -86,7 +133,6 @@ class Device : AppCompatActivity() {
 
                         Toast.makeText(this, "Device $name ditambahkan", Toast.LENGTH_LONG).show()
 
-                        // 👉 Langsung redirect ke BerandaActivity
                         val intent = Intent(this, BerandaActivity::class.java)
                         intent.putExtra("newDeviceName", name)
                         intent.putExtra("newDeviceType", type)
@@ -98,83 +144,36 @@ class Device : AppCompatActivity() {
             }
         }
 
+        checkPermissions()
     }
 
-    // -------------------- MQTT SETUP --------------------
-    private fun initializeMqtt() {
-        try {
-            mqttClient = MqttClient(
-                mqttBroker,
-                MqttClient.generateClientId(),
-                null
-            )
+    // -------------------- LIFECYCLE --------------------
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(this, MqttService::class.java)
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
 
-            val options = MqttConnectOptions().apply {
-                isAutomaticReconnect = true
-                isCleanSession = false   // jangan clean session, biar pesan retained tetap ada
-                connectionTimeout = 10
-                keepAliveInterval = 60
-            }
-
-            mqttClient.setCallback(object : MqttCallback {
-                override fun connectionLost(cause: Throwable?) {
-                    runOnUiThread {
-                        Toast.makeText(this@Device, "MQTT koneksi hilang", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    if (message == null) return
-                    val msg = message.toString()
-
-                    runOnUiThread {
-                        Toast.makeText(this@Device, "Pesan dari $topic: $msg", Toast.LENGTH_SHORT).show()
-                    }
-
-                    if (topic == topicRegister) {
-                        try {
-                            val json = JSONObject(msg)
-                            val deviceName = json.optString("device_name", "Unknown")
-                            val deviceType = json.optString("device_type", "Unknown")
-                            val chipId = json.optString("chip_id", "N/A")
-
-                            saveDeviceToSharedPref(deviceName, deviceType, chipId)
-                            sendDeviceToServer(deviceName, deviceType, chipId)
-
-                            runOnUiThread {
-                                Toast.makeText(this@Device, "Device diterima: $deviceName", Toast.LENGTH_LONG).show()
-                                val intent = Intent(this@Device, BerandaActivity::class.java)
-                                intent.putExtra("newDeviceName", deviceName)
-                                startActivity(intent)
-                                finish()
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                }
-
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {}
-            })
-
-            mqttClient.connect(options)
-            subscribeToTopics()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override fun onStop() {
+        super.onStop()
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
         }
     }
 
-    // -------------------- Subscribe --------------------
-    private fun subscribeToTopics() {
-        try {
-            mqttClient.subscribe(topicRegister, 1)
-            runOnUiThread {
-                Toast.makeText(this, "Subscribed ke $topicRegister", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    override fun onResume() {
+        super.onResume()
+        registerReceiver(mqttReceiver, IntentFilter("MQTT_MESSAGE"))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(mqttReceiver)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     // -------------------- SIMPAN LOCAL --------------------
@@ -189,7 +188,8 @@ class Device : AppCompatActivity() {
         editor.putString("device_${count}_chip", chip)
         editor.apply()
     }
-    // 🔹 Cek & minta permission runtime
+
+    // -------------------- PERMISSION --------------------
     private fun checkPermissions() {
         val permissions = arrayOf(
             Manifest.permission.INTERNET,
@@ -204,6 +204,7 @@ class Device : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, missing.toTypedArray(), 1001)
         }
     }
+
     // -------------------- KIRIM KE MYSQL --------------------
     private fun sendDeviceToServer(name: String, type: String, chip: String) {
         val client = OkHttpClient()
@@ -271,13 +272,6 @@ class Device : AppCompatActivity() {
                             val status = json.optString("status")
                             if (status == "ok") {
                                 callback(true, "WiFi berhasil dikirim, tunggu ESP konek...")
-
-                                // 🔹 Delay 5 detik lalu connect MQTT ulang
-                                runOnUiThread {
-                                    android.os.Handler(mainLooper).postDelayed({
-                                        initializeMqtt()
-                                    }, 5000)
-                                }
                             } else {
                                 callback(false, "ESP balikin error")
                             }
@@ -321,19 +315,11 @@ class Device : AppCompatActivity() {
         builder.show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        try {
-            if (::mqttClient.isInitialized && mqttClient.isConnected) {
-                mqttClient.disconnect()
-            }
-        } catch (_: Exception) {}
-    }
-
+    // -------------------- FETCH DEVICE FROM SERVER --------------------
     private fun fetchDevicesFromServer(onResult: (List<JSONObject>) -> Unit) {
         val client = OkHttpClient()
         val request = Request.Builder()
-            .url("http://103.197.190.79/api_mysql/get_devices.php") // ganti sesuai IP server
+            .url("http://103.197.190.79/api_mysql/get_devices.php")
             .get()
             .build()
 
@@ -348,12 +334,11 @@ class Device : AppCompatActivity() {
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     val body = it.body?.string() ?: "[]"
-                    Log.d("API_RESPONSE", body) // debug respon asli
+                    Log.d("API_RESPONSE", body)
 
                     try {
                         val list = mutableListOf<JSONObject>()
 
-                        // cek dulu responnya array atau object
                         if (body.trim().startsWith("[")) {
                             val arr = JSONArray(body)
                             for (i in 0 until arr.length()) {
@@ -361,7 +346,6 @@ class Device : AppCompatActivity() {
                             }
                         } else if (body.trim().startsWith("{")) {
                             val obj = JSONObject(body)
-                            // misal kalau server balikin {"devices":[...]}
                             if (obj.has("devices")) {
                                 val arr = obj.getJSONArray("devices")
                                 for (i in 0 until arr.length()) {
@@ -383,7 +367,4 @@ class Device : AppCompatActivity() {
             }
         })
     }
-
-
-
 }

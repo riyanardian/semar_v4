@@ -22,33 +22,26 @@
             android:layout_height="50dp"
             android:src="@drawable/icon_kembali"
             android:contentDescription="Back"
-            android:padding="8dp"
-            android:layout_marginEnd="8dp" />
+            android:padding="8dp" />
 
-        <!-- Spacer kiri-kanan -->
-        <View
-            android:layout_width="12dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginRight="-75dp"/>
-
-        <!-- Title -->
+        <!-- Title di tengah -->
         <TextView
             android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Add Device"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Tambah Device"
             android:textColor="#000000"
             android:textStyle="bold"
-            android:textSize="16sp"
-            android:gravity="center" />
+            android:textSize="22sp" />
 
-        <!-- Spacer kanan -->
+        <!-- Spacer kanan biar seimbang -->
         <View
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_width="50dp"
+            android:layout_height="match_parent" />
     </LinearLayout>
+
     <!-- Tombol fixed bawah -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -86,7 +79,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Langkah-Langkah Menambahkan Device"
+        android:text="Petunjuk Penggunaan"
         android:textStyle="bold"
         android:textSize="14sp"
         android:layout_marginTop="5dp"
@@ -106,23 +99,24 @@
             android:layout_height="100dp"
             android:orientation="vertical">
 
-
-            <!-- Petunjuk -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Langkah-Langkah Menambahkan Device"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="1. Aktifkan perangkat ESP\n- Nyalakan perangkat hingga lampu indikator menyala dan menandakan masuk ke mode Access Point (AP).\n\n2. Hubungkan WiFi ke Access Point ESP\n- Buka menu WiFi di smartphone.\n- Cari nama WiFi (SSID) dari ESP (contoh: ESP_Device_XXXX).\n- Masukkan password sesuai yang tertera di buku panduan (jika ada).\n\n3. Akses halaman konfigurasi ESP\n- Setelah terhubung, buka browser di smartphone.\n- Ketikkan alamat IP yang tercantum di buku panduan (contoh: 192.168.4.1).\n- Maka akan muncul halaman konfigurasi perangkat.\n\n4. Tambahkan Device\n- Di halaman konfigurasi, pilih menu 'Add Device' atau tombol Tambah Perangkat.\n- Masukkan informasi WiFi lokasi yang akan digunakan (SSID dan password WiFi rumah/kantor).\n\n5. Simpan dan Hubungkan\n- Tekan tombol Simpan / Connect.\n- ESP akan mencoba terhubung ke jaringan WiFi yang sudah dimasukkan.\n\n6. Koneksi Berhasil\n- Jika berhasil, lampu indikator akan berubah sesuai petunjuk (lihat buku panduan).\n- Aplikasi akan menampilkan perangkat baru yang sudah terhubung ke WiFi lokasi."
+                android:text="🔹 Tombol Set Wifi / Menambahkan Device Baru (Khusus Admin)\n
+1. Pertama-tama sambungkan WiFi HP Android dengan device sesuai nama WiFi dan password pada instruksi awal pemasangan.\n
+2. Setelah tersambung ke WiFi device, jangan khawatir jika tidak ada internet, lanjut saja klik tombol 'Set Wifi'.\n
+3. Masukkan SSID/nama dan password WiFi yang ada di lokasi (yang nantinya digunakan untuk komunikasi). Pastikan WiFi di lokasi terjangkau dan bisa tersambung dengan device.\n
+4. Tunggu sekitar 10–20 detik agar device merespon dan menambahkan device ke aplikasi Android.\n
+5. Jika otomatis kembali ke beranda dan sudah ada device yang ditambahkan tadi, berarti 'Set Wifi' serta penambahan device baru berhasil.\n
+6. Jika proses gagal, restart device lalu ulangi langkah 1–4.\n\n
+🔹 Tombol Tambah Device (Semua Pengguna Admin/Nonadmin)\n
+1. Klik tombol 'Tambah Device'.\n
+2. Akan muncul daftar tampilan device.\n
+3. Pilih device yang ingin ditambahkan ke beranda."
                 android:lineSpacingExtra="4dp"
                 android:textSize="13sp"
                 android:layout_marginBottom="16dp" />
+
 
         </LinearLayout>
     </ScrollView>

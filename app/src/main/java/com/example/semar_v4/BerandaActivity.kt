@@ -1,6 +1,5 @@
 package com.example.semar_v4
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -44,19 +43,6 @@ class BerandaActivity : AppCompatActivity() {
     private val BASE_URL = "http://103.197.190.79/api_mysql"
     private val client = OkHttpClient()
 
-    private val localReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.let {
-                val chipId = it.getStringExtra("chipId") ?: return
-                val type = it.getStringExtra("type") ?: return
-                val value = it.getStringExtra("value") ?: return
-
-                // update UI hanya jika adapter sudah siap
-                adapter?.updateDevice(chipId, type, value)
-            }
-        }
-    }
-
     private var selectedChip: String? = null
     private var selectedDeviceName: String? = null
     private var selectedDeviceType: String? = null
@@ -69,7 +55,6 @@ class BerandaActivity : AppCompatActivity() {
         initViews()
         setupRecyclerView()
         setGreeting()
-        registerBroadcast()
         loadDevices()
         restoreSelectedDevice()
         setupControlButtons()
@@ -101,12 +86,12 @@ class BerandaActivity : AppCompatActivity() {
         adapter = DeviceAdapter(devices,
             onClick = { d -> showDeviceDetail(d) },
             onSwitchChanged = { device, isChecked -> /* handle switch */ },
-            onDeleteClicked = { pos -> deleteDeviceAt(pos) }  // ✅ ini callback aman
+            onDeleteClicked = { pos -> deleteDeviceAt(pos) }
         )
         recyclerView.adapter = adapter
-
     }
-    fun deleteDeviceAt(position: Int) {
+
+    private fun deleteDeviceAt(position: Int) {
         val sharedPref = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
         val count = sharedPref.getInt("deviceCount", 0)
@@ -144,7 +129,6 @@ class BerandaActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setGreeting() {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val greeting = when (hour) {
@@ -157,9 +141,13 @@ class BerandaActivity : AppCompatActivity() {
         tvGreeting.text = greeting
     }
 
-    private fun registerBroadcast() {
-        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
-            .registerReceiver(localReceiver, android.content.IntentFilter("DEVICE_UPDATE"))
+    fun showDeviceSelection() {
+        layoutDefault.visibility = if (devices.isEmpty()) View.VISIBLE else View.GONE
+        recyclerView.visibility = if (devices.isNotEmpty()) View.VISIBLE else View.GONE
+        supportFragmentManager.beginTransaction()
+            .remove(supportFragmentManager.findFragmentById(R.id.bodyContainer)!!)
+            .commit()
+        disableControlButtons()
     }
 
     private fun loadDevices() {
@@ -328,7 +316,7 @@ class BerandaActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun selectDevice(device: DeviceModel) {
+    fun selectDevice(device: DeviceModel) {
         val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
         sp.edit().apply {
             putString("selected_chip", device.chipId)
@@ -342,12 +330,5 @@ class BerandaActivity : AppCompatActivity() {
         enableControlButtons()
         updateButtonColor(true)
         openFragment(ManualFragment(), device)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // unregister broadcast
-        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
-            .unregisterReceiver(localReceiver)
     }
 }

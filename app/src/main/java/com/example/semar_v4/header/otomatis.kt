@@ -1,7 +1,9 @@
 package com.example.semar_v4.header
 
+import android.content.*
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +12,6 @@ import android.widget.ImageView
 import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,13 +20,14 @@ import com.example.semar_v4.JadwalModel
 import com.example.semar_v4.R
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
-import java.util.*
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.semar_v4.BerandaActivity
+import com.example.semar_v4.service.MqttService
 
 class OtomatisFragment : Fragment() {
 
@@ -33,16 +35,40 @@ class OtomatisFragment : Fragment() {
     private lateinit var adapter: JadwalAdapter
     private val listJadwal = mutableListOf<JadwalModel>()
     private lateinit var btnBack: ImageView
-
     private lateinit var switchSchedule: Switch
     private val handler = Handler(Looper.getMainLooper())
 
-    private lateinit var mqttClient: MqttClient
-    private val brokerUrl = "tcp://test.mosquitto.org:1883"
-
+    private var chipId: String? = null
     private var lastCheckedMinute = -1
     private var lastCheckedDay = -1
     private var isRunning = false
+
+    private var mqttService: MqttService? = null
+    private var isBound = false
+
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as MqttService.LocalBinder
+            mqttService = binder.getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mqttService = null
+            isBound = false
+        }
+    }
+
+
+    private val PREFS_NAME = "MyRoomPrefs"
+    private val KEY_AUTOMATIS_ACTIVE = "otomatis_active"
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        chipId = arguments?.getString("chipId")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -64,22 +90,37 @@ class OtomatisFragment : Fragment() {
             onSwitchChange = { position, enabled ->
                 listJadwal[position].enabled = enabled
                 saveJadwal()
-            }
+                chipId?.let { publishRelay1(it, listJadwal[position]) }
+            },
+            showSwitch = true
         )
 
         recyclerJadwal.layoutManager = LinearLayoutManager(requireContext())
         recyclerJadwal.adapter = adapter
         recyclerJadwal.visibility = View.GONE
 
-        // Tombol Back
+        // 🔥 Restore state otomatis terakhir
+        val prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val wasActive = prefs.getBoolean(KEY_AUTOMATIS_ACTIVE, false)
+        if (wasActive) {
+            switchSchedule.isChecked = true
+            loadJadwal()
+            recyclerJadwal.visibility = View.VISIBLE
+            startJadwalChecker()
+        }
+
         btnBack.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
         }
 
-        // inisialisasi MQTT
-        initMqtt()
+        btnBack.setOnClickListener {
+            if (activity is BerandaActivity) {
+                (activity as BerandaActivity).showDeviceSelection()
+            }
+        }
 
         switchSchedule.setOnCheckedChangeListener { _, isChecked ->
+            val editor = prefs.edit()
             if (isChecked) {
                 AlertDialog.Builder(requireContext())
                     .setTitle("Konfirmasi Jadwal")
@@ -89,24 +130,26 @@ class OtomatisFragment : Fragment() {
                         loadJadwal()
                         recyclerJadwal.visibility = View.VISIBLE
                         startJadwalChecker()
+                        editor.putBoolean(KEY_AUTOMATIS_ACTIVE, true).apply()
                     }
                     .setNegativeButton("Tidak") { _, _ ->
                         switchSchedule.isChecked = false
+                        editor.putBoolean(KEY_AUTOMATIS_ACTIVE, false).apply()
                     }
                     .show()
             } else {
                 Toast.makeText(requireContext(), "Jadwal dimatikan", Toast.LENGTH_SHORT).show()
                 recyclerJadwal.visibility = View.GONE
                 stopJadwalChecker()
+                editor.putBoolean(KEY_AUTOMATIS_ACTIVE, false).apply()
             }
         }
 
         return view
     }
 
-    // -------- SharedPreferences --------
     private val sharedPref by lazy {
-        requireContext().getSharedPreferences("jadwal_prefs", AppCompatActivity.MODE_PRIVATE)
+        requireContext().getSharedPreferences("jadwal_prefs", 0)
     }
 
     private fun saveJadwal() {
@@ -127,20 +170,23 @@ class OtomatisFragment : Fragment() {
         }
     }
 
-    // -------- MQTT --------
-    private fun initMqtt() {
-        val clientId = MqttClient.generateClientId()
-        mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                mqttClient.connect()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    private fun publishRelay1(chipId: String, jadwal: JadwalModel) {
+        if (!isBound) return
+        val topic = "device/$chipId/relay1/set"
+        val payload = if (jadwal.enabled) "1" else "0"
+        mqttService?.publishMessage(topic, payload)
+        broadcastToBeranda("relay1", payload)
     }
 
-    // -------- Jadwal Checker --------
+    private fun broadcastToBeranda(key: String, value: String) {
+        val chip = chipId ?: return
+        val intent = Intent("DEVICE_UPDATE")
+        intent.putExtra("chipId", chip)
+        intent.putExtra("key", key)
+        intent.putExtra("value", value)
+        LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent)
+    }
+
     private fun startJadwalChecker() {
         if (isRunning) return
         isRunning = true
@@ -154,7 +200,6 @@ class OtomatisFragment : Fragment() {
                 val hour = calendar.get(Calendar.HOUR_OF_DAY)
                 val minute = calendar.get(Calendar.MINUTE)
 
-                // reset executedToday tiap hari baru
                 if (day != lastCheckedDay) {
                     listJadwal.forEach { it.executedToday = false }
                     lastCheckedDay = day
@@ -164,12 +209,12 @@ class OtomatisFragment : Fragment() {
                     lastCheckedMinute = minute
                     listJadwal.forEach { jadwal ->
                         if (!jadwal.executedToday &&
-                            jadwal.enabled && // hanya kirim kalau switch per-jadwal aktif
+                            jadwal.enabled &&
                             jadwal.dayOfWeek == day &&
                             jadwal.hour == hour &&
                             jadwal.minute == minute
                         ) {
-                            publishMqtt(jadwal.relay, jadwal.status)
+                            chipId?.let { publishRelay1(it, jadwal) }
                             jadwal.executedToday = true
                         }
                     }
@@ -185,22 +230,17 @@ class OtomatisFragment : Fragment() {
         handler.removeCallbacksAndMessages(null)
     }
 
-    private fun publishMqtt(relay: String, status: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                if (mqttClient.isConnected) {
-                    val topic = "device/$relay/status"
-                    val message = MqttMessage(status.toByteArray()).apply { qos = 1 }
-                    mqttClient.publish(topic, message)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(requireContext(), MqttService::class.java)
+        requireActivity().bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 
-    override fun onDestroy() {
-        stopJadwalChecker()
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
+        if (isBound) {
+            requireActivity().unbindService(connection)
+            isBound = false
+        }
     }
 }

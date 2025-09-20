@@ -31,7 +31,9 @@
             android:text="Pilih Foto"
             android:textColor="@android:color/white"
             android:backgroundTint="#5B2DBA"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="32dp"
+            android:background="@drawable/bg_card"
+            />
 
         <!-- Input Nama -->
         <EditText
@@ -74,7 +76,9 @@
             android:text="Simpan"
             android:textColor="@android:color/white"
             android:backgroundTint="#5B2DBA"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_card"
+            />
 
     </LinearLayout>
 </ScrollView>

@@ -1,5 +1,6 @@
 package com.example.semar_v4
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
@@ -23,6 +24,8 @@ class Histori : AppCompatActivity() {
     private lateinit var spinnerRelay: Spinner
     private lateinit var adapter: HistoriAdapter
     private val listHistory = mutableListOf<HistoriModel>()
+    private lateinit var btnBack: ImageView
+
 
     private val client = OkHttpClient()
     private val baseUrl = "http://103.197.190.79/api_mysql/get_histori.php"
@@ -45,6 +48,7 @@ class Histori : AppCompatActivity() {
         spinnerMode = findViewById(R.id.spinnerMode)
         spinnerBulan = findViewById(R.id.spinnerTanggal) // 🔹 masih pakai id lama
         spinnerRelay = findViewById(R.id.spinnerRelay)
+        btnBack = findViewById(R.id.btnBack)
 
         recyclerHistory.layoutManager = LinearLayoutManager(this)
         adapter = HistoriAdapter(listHistory)
@@ -54,10 +58,8 @@ class Histori : AppCompatActivity() {
         loadBulan()
         loadHistory("ALL", "ALL", "")
 
-        // tombol back
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
+        btnBack.setOnClickListener { startActivity(Intent(this, BerandaActivity::class.java)) }
+
 
         // tombol refresh
         findViewById<ImageButton>(R.id.btnRefresh).setOnClickListener {

@@ -61,12 +61,19 @@ class Jadwal : AppCompatActivity() {
         btnTambah = findViewById(R.id.btnTambahJadwal)
         btnBack = findViewById(R.id.btnBack)
 
-        adapter = JadwalAdapter(listJadwal) { position ->
-            // hapus item dari list
-            listJadwal.removeAt(position)
-            adapter.notifyItemRemoved(position)
-            saveJadwal() // simpan setelah hapus
-        }
+        adapter = JadwalAdapter(
+            listJadwal,
+            onDeleteClick = { position ->
+                listJadwal.removeAt(position)
+                adapter.notifyItemRemoved(position)
+                saveJadwal()
+            },
+            onSwitchChange = { position, isChecked ->
+                listJadwal[position].enabled = isChecked
+                saveJadwal()
+            }
+        )
+
         recyclerJadwal.layoutManager = LinearLayoutManager(this)
         recyclerJadwal.adapter = adapter
 
@@ -86,7 +93,7 @@ class Jadwal : AppCompatActivity() {
 
         // Spinner relay
         val spinnerRelay = view.findViewById<Spinner>(R.id.spinnerRelay)
-        val relayOptions = arrayOf("Relay 1", "Relay 2", "Relay 3")
+        val relayOptions = arrayOf("Relay 1")
         spinnerRelay.adapter =
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, relayOptions)
 

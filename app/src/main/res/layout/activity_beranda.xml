@@ -55,7 +55,6 @@
                 android:layout_marginTop="12dp"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_marginLeft="10dp"
                 android:backgroundTint="#5B2DBA"
                 android:contentDescription="add"
                 android:src="@drawable/icon_user"
@@ -70,37 +69,52 @@
         android:orientation="horizontal"
         android:gravity="start"
         android:layout_marginTop="16dp"
+        android:layout_marginBottom="10dp"
         android:paddingLeft="16dp">
 
-        <Button
-            android:id="@+id/btnManual"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="  Manual  "
-            android:backgroundTint="#5B2DBA"
-            android:textColor="#FFFFFF"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_card"/>
+            android:layout_weight="0.7"
+            android:orientation="horizontal"
+            >
 
-        <Button
-            android:id="@+id/btnOtomatis"
-            android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/btnManual"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_card"
+                android:backgroundTint="#5B2DBA"
+                android:text="  Manual  "
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnOtomatis"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:backgroundTint="#5B2DBA"
+                android:text="Otomatis"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="0.3"
             android:layout_height="wrap_content"
-            android:text="Otomatis"
-            android:backgroundTint="#5B2DBA"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_card"
-            android:layout_marginRight="87dp"/>
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+            <ImageView
+                android:id="@+id/btnTambahDevice"
+                android:layout_marginTop="5dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:backgroundTint="#5B2DBA"
+                android:contentDescription="profile"
+                android:src="@drawable/icon_tambah"
+                />
+        </LinearLayout>
 
-        <ImageView
-            android:id="@+id/btnTambahDevice"
-            android:layout_marginTop="5dp"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:backgroundTint="#5B2DBA"
-            android:contentDescription="profile"
-            android:src="@drawable/icon_tambah"
-            />
     </LinearLayout>
 
     <!-- Buttons Manual / Otomatis -->

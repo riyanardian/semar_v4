@@ -12,7 +12,7 @@ class JadwalAdapter(
     private val listJadwal: MutableList<JadwalModel>,
     private val onDeleteClick: (position: Int) -> Unit,
     private val onSwitchChange: (Int, Boolean) -> Unit,
-
+    private val showSwitch: Boolean = false // tambahkan flag showSwitch
 ) : RecyclerView.Adapter<JadwalAdapter.JadwalViewHolder>() {
 
     inner class JadwalViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -41,6 +41,16 @@ class JadwalAdapter(
                 }
             }
 
+            // atur visibility dan listener switch sesuai showSwitch
+            switchEnable.visibility = if (showSwitch) View.VISIBLE else View.GONE
+            if (showSwitch) {
+                switchEnable.isChecked = jadwal.enabled
+                switchEnable.setOnCheckedChangeListener { _, isChecked ->
+                    onSwitchChange(adapterPosition, isChecked)
+                }
+            } else {
+                switchEnable.setOnCheckedChangeListener(null) // hindari callback
+            }
         }
     }
 
@@ -52,12 +62,6 @@ class JadwalAdapter(
 
     override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
         holder.bind(listJadwal[position])
-        val jadwal = listJadwal[position]
-
-        holder.switchEnable.isChecked = jadwal.enabled
-        holder.switchEnable.setOnCheckedChangeListener { _, isChecked ->
-            onSwitchChange(position, isChecked)
-        }
     }
 
     override fun getItemCount(): Int = listJadwal.size

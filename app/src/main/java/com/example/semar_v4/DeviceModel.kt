@@ -6,5 +6,6 @@ data class DeviceModel(
     val chipId: String,   //
     var status: Boolean = false,   // status ON/OFF dari ESP32
     var runhourRelay2: String = "0 jam" // default
+
 )
 
