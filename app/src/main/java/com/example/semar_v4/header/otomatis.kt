@@ -80,14 +80,25 @@ class OtomatisFragment : Fragment() {
         adapter = JadwalAdapter(
             list = listJadwal,
             showSwitch = true,  // switch muncul di fragment otomatis
-            onDeleteClick = { position ->
-                val jadwal = listJadwal[position]
-                listJadwal.removeAt(position)
+            onDeleteClick  = { jadwal, isChecked ->
+                jadwal.enabled = isChecked
                 saveJadwal()
-                adapter.notifyDataSetChanged()
 
-                // Kirim ke MQTT untuk "hapus" jadwal
-                chipId?.let { mqttService?.publishMessage("device/$it/jadwal/remove", Gson().toJson(jadwal)) }
+                // Kirim ke MQTT sesuai status switch item
+                val topic = "device/$chipId/jadwal"
+                val payload = Gson().toJson(
+                    mapOf(
+                        "relay" to jadwal.relay,
+                        "enabled" to isChecked,
+                        "startHour" to jadwal.startHour,
+                        "startMinute" to jadwal.startMinute,
+                        "endHour" to jadwal.endHour,
+                        "endMinute" to jadwal.endMinute,
+                        "days" to jadwal.days,
+                        "delete" to false  // tambahkan delete false
+                    )
+                )
+                mqttService?.publishMessage(topic, payload)
             },
             onSwitchChange = { jadwal, isChecked ->
                 jadwal.enabled = isChecked
@@ -103,7 +114,8 @@ class OtomatisFragment : Fragment() {
                         "startMinute" to jadwal.startMinute,
                         "endHour" to jadwal.endHour,
                         "endMinute" to jadwal.endMinute,
-                        "days" to jadwal.days
+                        "days" to jadwal.days,
+                        "delete" to false  // tambahkan delete false
                     )
                 )
                 mqttService?.publishMessage(topic, payload)

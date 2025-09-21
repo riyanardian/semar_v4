@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 class JadwalAdapter(
     private val list: MutableList<JadwalModel>,
     private val showSwitch: Boolean, // flag untuk tampilkan switch
-    private val onDeleteClick: (Int) -> Unit,
+    private val onDeleteClick: (JadwalModel, Boolean) -> Unit,
     private val onSwitchChange: (JadwalModel, Boolean) -> Unit
 ) : RecyclerView.Adapter<JadwalAdapter.ViewHolder>() {
 
@@ -51,7 +51,7 @@ class JadwalAdapter(
 
         // --- DELETE ---
         holder.btnDelete.setOnClickListener {
-            onDeleteClick(position)
+            onDeleteClick(item, item.enabled) // kirim model dan status switch
         }
     }
 
