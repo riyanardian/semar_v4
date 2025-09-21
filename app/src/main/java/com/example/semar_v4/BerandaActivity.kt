@@ -1,8 +1,14 @@
 package com.example.semar_v4
 
+import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -19,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.semar_v4.header.ManualFragment
 import com.example.semar_v4.header.OtomatisFragment
+import com.example.semar_v4.service.MqttService
 import de.hdodenhof.circleimageview.CircleImageView
 import okhttp3.*
 import org.json.JSONObject
@@ -42,15 +49,38 @@ class BerandaActivity : AppCompatActivity() {
     private var adapter: DeviceAdapter? = null
     private val BASE_URL = "http://103.197.190.79/api_mysql"
     private val client = OkHttpClient()
+    private var modeReceiver: BroadcastReceiver? = null // simpan receiver
 
     private var selectedChip: String? = null
     private var selectedDeviceName: String? = null
     private var selectedDeviceType: String? = null
+    private var isAdmin = false
+    private var mqttService: MqttService? = null
+    private var isBound = false
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as MqttService.LocalBinder
+            mqttService = binder.getService()
+            isBound = true
+            subscribeModeTopic()
+
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mqttService = null
+            isBound = false
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_beranda)
+
+        isAdmin = intent.getBooleanExtra("isAdmin", false)
+// Button hanya aktif untuk admin
 
         initViews()
         setupRecyclerView()
@@ -60,6 +90,11 @@ class BerandaActivity : AppCompatActivity() {
         setupControlButtons()
         setupClickListeners()
         loadUserSession()
+        // Terapkan warna abu-abu pada tombol secara default saat aplikasi pertama kali dimuat
+        btnManual.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+        btnOtomatis.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
+
+
     }
 
     private fun initViews() {
@@ -202,22 +237,81 @@ class BerandaActivity : AppCompatActivity() {
         }
     }
 
+
     private fun setupControlButtons() {
+        val sharedPref = getSharedPreferences("user_session", MODE_PRIVATE)
+        val isAdmin = sharedPref.getBoolean("isAdmin", false)
+
         val selectedDevice = getSelectedDevice()
-        if (selectedDevice == null) {
-            disableControlButtons()
+
+        // Enable tombol hanya jika admin dan device tidak null
+        val enableButtons = isAdmin && selectedDevice != null
+        btnManual.isEnabled = enableButtons
+        btnOtomatis.isEnabled = enableButtons
+
+        if (enableButtons) {
+            // Safe call untuk non-null device
+            selectedDevice?.let { device ->
+                btnManual.setOnClickListener {
+                    openFragment(ManualFragment(), device)
+                    updateButtonColor(true)
+                    mqttService?.publish("device/$selectedChip/mode", "MANUAL")
+                    Log.d("BerandaActivity", "Admin published MANUAL")
+
+                }
+
+                btnOtomatis.setOnClickListener {
+                    openFragment(OtomatisFragment(), device)
+                    updateButtonColor(false)
+                    mqttService?.publish("device/$selectedChip/mode", "AUTO")
+                    Log.d("BerandaActivity", "Admin published AUTO")
+
+                }
+            }
         } else {
-            enableControlButtons()
-            btnManual.setOnClickListener {
-                openFragment(ManualFragment(), selectedDevice)
-                updateButtonColor(true)
-            }
-            btnOtomatis.setOnClickListener {
-                openFragment(OtomatisFragment(), selectedDevice)
-                updateButtonColor(false)
-            }
+            disableControlButtons()
         }
     }
+
+// Di BerandaActivity
+
+    private fun subscribeModeTopic() {
+        if (selectedChip == null || !isBound) return
+
+        val topic = "device/$selectedChip/mode"
+        mqttService?.subscribeTopic(topic)
+        Log.d("BerandaActivity", "Subscribed to $topic")
+
+        // unregister receiver lama jika ada
+        modeReceiver?.let {
+            try { unregisterReceiver(it) } catch (e: IllegalArgumentException) { }
+        }
+
+        modeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val t = intent?.getStringExtra("topic")
+                val payload = intent?.getStringExtra("payload") ?: return
+                if (t == topic) {
+                    runOnUiThread {
+                        when(payload) {
+                            "MANUAL" -> updateButtonColor(true)
+                            "AUTO" -> updateButtonColor(false)
+                            else -> Log.d("BerandaActivity", "Payload tidak dikenali: $payload")
+                        }
+                        Log.d("BerandaActivity", "UI updated for $payload")
+                    }
+                }
+            }
+        }
+
+        val intentFilter = IntentFilter("MQTT_MESSAGE")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(modeReceiver, intentFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(modeReceiver, intentFilter)
+        }
+    }
+
 
     private fun disableControlButtons() {
         btnManual.isEnabled = false
@@ -330,5 +424,18 @@ class BerandaActivity : AppCompatActivity() {
         enableControlButtons()
         updateButtonColor(true)
         openFragment(ManualFragment(), device)
+    }
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(this, MqttService::class.java)
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (isBound) {
+            unbindService(connection)
+            isBound = false
+        }
     }
 }

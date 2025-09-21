@@ -50,7 +50,7 @@
             android:layout_marginHorizontal="4dp" />
 
         <TextView
-            android:id="@+id/txtMode"
+            android:id="@+id/txtchipid"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

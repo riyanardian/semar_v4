@@ -12,7 +12,7 @@ class HistoriAdapter(private val list: List<HistoriModel>) :
     class HistoriViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val txtRelay: TextView = itemView.findViewById(R.id.txtRelay)
         val txtStatus: TextView = itemView.findViewById(R.id.txtStatus)
-        val txtMode: TextView = itemView.findViewById(R.id.txtMode)
+        val txtchipid: TextView = itemView.findViewById(R.id.txtchipid)
         val txtWaktu: TextView = itemView.findViewById(R.id.txtWaktu)
     }
 
@@ -26,9 +26,9 @@ class HistoriAdapter(private val list: List<HistoriModel>) :
         val data = list[position]
         holder.txtRelay.text = data.relay
         holder.txtStatus.text = data.status
-        holder.txtMode.text = data.mode
+        holder.txtchipid.text = data.chipid
         holder.txtWaktu.text = data.waktu
     }
 
-    override fun getItemCount(): Int = list.size
+    override fun getItemCount(): Int=list.size
 }

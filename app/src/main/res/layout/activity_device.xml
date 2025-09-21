@@ -90,7 +90,7 @@
     <!-- Konten scroll -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="509dp"
         android:layout_weight="1"
         android:padding="30dp">
 
@@ -102,6 +102,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:lineSpacingExtra="4dp"
                 android:text="🔹 Tombol Set Wifi / Menambahkan Device Baru (Khusus Admin)\n
 1. Pertama-tama sambungkan WiFi HP Android dengan device sesuai nama WiFi dan password pada instruksi awal pemasangan.\n
 2. Setelah tersambung ke WiFi device, jangan khawatir jika tidak ada internet, lanjut saja klik tombol 'Set Wifi'.\n
@@ -113,13 +115,23 @@
 1. Klik tombol 'Tambah Device'.\n
 2. Akan muncul daftar tampilan device.\n
 3. Pilih device yang ingin ditambahkan ke beranda."
-                android:lineSpacingExtra="4dp"
-                android:textSize="13sp"
-                android:layout_marginBottom="16dp" />
+                android:textSize="13sp" />
 
 
         </LinearLayout>
     </ScrollView>
+    <Button
+        android:id="@+id/btnReset"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@drawable/bg_card"
+        android:backgroundTint="#BA2D2D"
+        android:text="RESET DEVICE"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="true"
+        android:padding="12dp"/>
 
 
 </LinearLayout>

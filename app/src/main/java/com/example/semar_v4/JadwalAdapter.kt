@@ -9,60 +9,51 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class JadwalAdapter(
-    private val listJadwal: MutableList<JadwalModel>,
-    private val onDeleteClick: (position: Int) -> Unit,
-    private val onSwitchChange: (Int, Boolean) -> Unit,
-    private val showSwitch: Boolean = false // tambahkan flag showSwitch
-) : RecyclerView.Adapter<JadwalAdapter.JadwalViewHolder>() {
+    private val list: MutableList<JadwalModel>,
+    private val showSwitch: Boolean, // flag untuk tampilkan switch
+    private val onDeleteClick: (Int) -> Unit,
+    private val onSwitchChange: (JadwalModel, Boolean) -> Unit
+) : RecyclerView.Adapter<JadwalAdapter.ViewHolder>() {
 
-    inner class JadwalViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvJadwal: TextView = itemView.findViewById(R.id.tvJadwal)
-        val btnDeleteDevice: ImageView = itemView.findViewById(R.id.btnDeleteDevice)
-        val switchEnable: Switch = itemView.findViewById(R.id.switchEnable) // switch per-jadwal
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvRelay: TextView = view.findViewById(R.id.tvItemName)
+        val tvJamMulai: TextView = view.findViewById(R.id.tvJamMulai)
+        val tvJamMati: TextView = view.findViewById(R.id.tvJamMati)
+        val tvHari: TextView = view.findViewById(R.id.tvHari)
+        val switchEnable: Switch = view.findViewById(R.id.switchEnable)
+        val btnDelete: ImageView = view.findViewById(R.id.btnDelete)
+    }
 
-        fun bind(jadwal: JadwalModel) {
-            val dayName = when (jadwal.dayOfWeek) {
-                1 -> "Minggu"
-                2 -> "Senin"
-                3 -> "Selasa"
-                4 -> "Rabu"
-                5 -> "Kamis"
-                6 -> "Jumat"
-                7 -> "Sabtu"
-                else -> "-"
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_jadwal, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = list[position]
+
+        holder.tvRelay.text = "Relay ${item.relay}"
+        holder.tvJamMulai.text = "Jam Mulai: ${item.getJamMulai()}"
+        holder.tvJamMati.text = "Jam Mati: ${item.getJamMati()}"
+        holder.tvHari.text = "Hari Aktif: ${item.getHariString()}"
+
+        // --- SWITCH ---
+        if (showSwitch) {
+            holder.switchEnable.visibility = View.VISIBLE
+            holder.switchEnable.isChecked = item.enabled // ambil dari model
+            holder.switchEnable.setOnCheckedChangeListener { _, isChecked ->
+                item.enabled = isChecked
+                onSwitchChange(item, isChecked)
             }
+        } else {
+            holder.switchEnable.visibility = View.GONE
+        }
 
-            tvJadwal.text = "${jadwal.relay} | $dayName | ${jadwal.hour}:${jadwal.minute.toString().padStart(2, '0')} | ${jadwal.status}"
-
-            btnDeleteDevice.setOnClickListener {
-                val pos = bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) {
-                    onDeleteClick(pos)
-                }
-            }
-
-            // atur visibility dan listener switch sesuai showSwitch
-            switchEnable.visibility = if (showSwitch) View.VISIBLE else View.GONE
-            if (showSwitch) {
-                switchEnable.isChecked = jadwal.enabled
-                switchEnable.setOnCheckedChangeListener { _, isChecked ->
-                    onSwitchChange(adapterPosition, isChecked)
-                }
-            } else {
-                switchEnable.setOnCheckedChangeListener(null) // hindari callback
-            }
+        // --- DELETE ---
+        holder.btnDelete.setOnClickListener {
+            onDeleteClick(position)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JadwalViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_jadwal, parent, false)
-        return JadwalViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
-        holder.bind(listJadwal[position])
-    }
-
-    override fun getItemCount(): Int = listJadwal.size
+    override fun getItemCount(): Int = list.size
 }

@@ -33,6 +33,20 @@ class MqttService : Service() {
         initMqtt()
     }
 
+    private var mqttCallback: ((topic: String, message: String) -> Unit)? = null
+
+    // Fungsi untuk set callback dari activity/fragment
+    fun setCallback(callback: (topic: String, message: String) -> Unit) {
+        mqttCallback = callback
+    }
+
+    // Contoh saat menerima pesan MQTT
+    private fun handleIncomingMessage(topic: String, payload: String) {
+        // panggil callback kalau ada
+        mqttCallback?.invoke(topic, payload)
+    }
+
+
     private fun initMqtt() {
         val clientId = MqttClient.generateClientId()
         mqttClient = MqttClient(brokerUrl, clientId, MemoryPersistence())
@@ -109,6 +123,15 @@ class MqttService : Service() {
             }
         }
     }
+
+    fun publish(topic: String, message: String) {
+        mqttClient?.let {
+            if (it.isConnected) {
+                it.publish(topic, message.toByteArray(), 0, false)
+            }
+        }
+    }
+
 
     // Fungsi untuk fragment panggil last payload
     fun getLastPayload(topic: String): String {

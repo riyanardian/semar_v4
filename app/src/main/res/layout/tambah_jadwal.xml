@@ -1,146 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutTambahJadwal"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:id="@+id/main">
+    android:padding="16dp">
 
+    <!-- Judul -->
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tambah Jadwal"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="16dp" />
+        android:layout_gravity="center"/>
 
-    <!-- Pilih Relay -->
+    <!-- Dropdown pilih device -->
     <Spinner
-        android:id="@+id/spinnerRelay"
+        android:id="@+id/spinnerDevice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:minWidth="48dp" />
+        android:layout_marginTop="12dp"/>
 
-    <!-- ON / OFF -->
-    <RadioGroup
-        android:id="@+id/radioGroupAction"
-        android:layout_width="match_parent"
+    <!-- Input jam mulai -->
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingTop="12dp">
+        android:text="Jam Mulai"
+        android:layout_marginTop="12dp"/>
 
-        <RadioButton
-            android:id="@+id/radioOn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ON"
-            android:checked="true"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <RadioButton
-            android:id="@+id/radioOff"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="OFF"
-            android:layout_marginLeft="20dp"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-    </RadioGroup>
-
-    <!-- Time Picker -->
     <TimePicker
-        android:id="@+id/timePicker"
+        android:id="@+id/timePickerMulai"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="12dp" />
+        android:timePickerMode="spinner" />
 
+    <!-- Input jam mati -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Jam Mati"
+        android:layout_marginTop="12dp"/>
 
-    <!-- Pilih Hari -->
+    <TimePicker
+        android:id="@+id/timePickerMati"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:timePickerMode="spinner" />
+
+    <!-- Checkbox hari -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="12dp"
-        android:weightSum="7">
+        android:gravity="center"
+        android:layout_marginTop="12dp">
 
-        <CheckBox
-            android:id="@+id/cbSenin"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/senin"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbSelasa"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/selasa"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbRabu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/rabu"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbKamis"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/kamis"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbJumat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/jumat"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbSabtu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/sabtu"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
-        <CheckBox
-            android:id="@+id/cbMinggu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/minggu"
-            android:minHeight="48dp"
-            android:minWidth="48dp" />
-
+        <CheckBox android:id="@+id/cbSen" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sen"/>
+        <CheckBox android:id="@+id/cbSel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sel"/>
+        <CheckBox android:id="@+id/cbRab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rab"/>
+        <CheckBox android:id="@+id/cbKam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Kam"/>
+        <CheckBox android:id="@+id/cbJum" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Jum"/>
+        <CheckBox android:id="@+id/cbSab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sab"/>
+        <CheckBox android:id="@+id/cbMin" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Min"/>
     </LinearLayout>
 
-
-
-    <!-- Tombol Simpan -->
+    <!-- Tombol simpan -->
     <Button
         android:id="@+id/btnSimpan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Simpan"
-        android:backgroundTint="#673AB7"
+        android:text="SIMPAN"
+        android:backgroundTint="@color/purple_500"
         android:textColor="@android:color/white"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"/>
+
 </LinearLayout>

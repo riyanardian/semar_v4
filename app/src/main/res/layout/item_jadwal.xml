@@ -1,32 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="12dp"
-    android:background="@android:color/white"
-    android:gravity="center_vertical"
-    android:id="@+id/main">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
 
-    <TextView
-        android:id="@+id/tvJadwal"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="Relay 1 - Senin 07:00"
-        android:textSize="16sp" />
-    <Switch
-        android:id="@+id/switchEnable"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:minWidth="48dp"/>
+        android:orientation="vertical"
+        android:padding="12dp">
 
-    <ImageView
-        android:id="@+id/btnDeleteDevice"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="16dp"
-        android:contentDescription="Delete Device"
-        android:src="@drawable/sampah" />
-</LinearLayout>
+        <!-- Baris atas: Nama item + Switch + Delete -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvItemName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Item 1"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switchEnable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"/>
+
+            <ImageView
+                android:id="@+id/btnDelete"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/sampah"
+                android:contentDescription="Hapus Jadwal" />
+        </LinearLayout>
+
+        <!-- Jam Mulai -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Jam Mulai:"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/tvJamMulai"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="05:09 PM"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"/>
+
+        <!-- Jam Mati -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Jam Mati:"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/tvJamMati"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="05:09 PM"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"/>
+
+        <!-- Hari aktif -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hari Aktif:"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/tvHari"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sen, Sel, Rab"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

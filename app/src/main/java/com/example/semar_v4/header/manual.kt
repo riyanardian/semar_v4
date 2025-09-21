@@ -225,8 +225,20 @@ class ManualFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        requireContext().registerReceiver(mqttReceiver, IntentFilter("MQTT_MESSAGE"))
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(
+                mqttReceiver,
+                IntentFilter("MQTT_MESSAGE"),
+                Context.RECEIVER_NOT_EXPORTED
+            )
+        } else {
+            requireContext().registerReceiver(
+                mqttReceiver,
+                IntentFilter("MQTT_MESSAGE")
+            )
+        }
     }
+
 
     override fun onPause() {
         super.onPause()

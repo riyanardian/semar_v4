@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ImageView
-import android.widget.RadioGroup
 import android.widget.Spinner
 import android.widget.TimePicker
 import androidx.activity.enableEdgeToEdge
@@ -21,12 +20,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.*
 
 class Jadwal : AppCompatActivity() {
@@ -36,7 +29,6 @@ class Jadwal : AppCompatActivity() {
     private lateinit var btnTambah: Button
     private lateinit var adapter: JadwalAdapter
     private val listJadwal = mutableListOf<JadwalModel>()
-
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -63,16 +55,19 @@ class Jadwal : AppCompatActivity() {
 
         adapter = JadwalAdapter(
             listJadwal,
+            showSwitch = false, // <--- tambahkan ini
             onDeleteClick = { position ->
                 listJadwal.removeAt(position)
                 adapter.notifyItemRemoved(position)
                 saveJadwal()
             },
-            onSwitchChange = { position, isChecked ->
-                listJadwal[position].enabled = isChecked
+            onSwitchChange = { jadwal, isChecked ->
+                jadwal.enabled = isChecked
                 saveJadwal()
             }
         )
+
+
 
         recyclerJadwal.layoutManager = LinearLayoutManager(this)
         recyclerJadwal.adapter = adapter
@@ -82,7 +77,6 @@ class Jadwal : AppCompatActivity() {
         adapter.notifyDataSetChanged()
 
         btnTambah.setOnClickListener { showBottomSheetTambah() }
-        // ke Jadwal
         btnBack.setOnClickListener { startActivity(Intent(this, BerandaActivity::class.java)) }
     }
 
@@ -91,55 +85,69 @@ class Jadwal : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.tambah_jadwal, null)
         bottomSheet.setContentView(view)
 
-        // Spinner relay
-        val spinnerRelay = view.findViewById<Spinner>(R.id.spinnerRelay)
-        val relayOptions = arrayOf("Relay 1")
+        // Spinner pilih relay/device
+        val spinnerRelay = view.findViewById<Spinner>(R.id.spinnerDevice)
+        val relayOptions = arrayOf("Relay 1") // bisa nanti ambil dari SharedPreferences/Database
         spinnerRelay.adapter =
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, relayOptions)
 
-        // RadioGroup ON/OFF
-        val radioGroup = view.findViewById<RadioGroup>(R.id.radioGroupAction)
-
-        // TimePicker
-        val timePicker = view.findViewById<TimePicker>(R.id.timePicker)
-        timePicker.setIs24HourView(true) // format 24 jam
+        // TimePicker mulai & mati
+        val timePickerMulai = view.findViewById<TimePicker>(R.id.timePickerMulai)
+        val timePickerMati = view.findViewById<TimePicker>(R.id.timePickerMati)
+        timePickerMulai.setIs24HourView(true)
+        timePickerMati.setIs24HourView(true)
 
         // Checkbox hari
         val checkBoxes = listOf(
-            view.findViewById<CheckBox>(R.id.cbSenin) to Calendar.MONDAY,
-            view.findViewById<CheckBox>(R.id.cbSelasa) to Calendar.TUESDAY,
-            view.findViewById<CheckBox>(R.id.cbRabu) to Calendar.WEDNESDAY,
-            view.findViewById<CheckBox>(R.id.cbKamis) to Calendar.THURSDAY,
-            view.findViewById<CheckBox>(R.id.cbJumat) to Calendar.FRIDAY,
-            view.findViewById<CheckBox>(R.id.cbSabtu) to Calendar.SATURDAY,
-            view.findViewById<CheckBox>(R.id.cbMinggu) to Calendar.SUNDAY
+            view.findViewById<CheckBox>(R.id.cbSen) to Calendar.MONDAY,
+            view.findViewById<CheckBox>(R.id.cbSel) to Calendar.TUESDAY,
+            view.findViewById<CheckBox>(R.id.cbRab) to Calendar.WEDNESDAY,
+            view.findViewById<CheckBox>(R.id.cbKam) to Calendar.THURSDAY,
+            view.findViewById<CheckBox>(R.id.cbJum) to Calendar.FRIDAY,
+            view.findViewById<CheckBox>(R.id.cbSab) to Calendar.SATURDAY,
+            view.findViewById<CheckBox>(R.id.cbMin) to Calendar.SUNDAY
         )
 
         val btnSimpan = view.findViewById<Button>(R.id.btnSimpan)
         btnSimpan.setOnClickListener {
             val relay = spinnerRelay.selectedItem.toString()
-            val status = when (radioGroup.checkedRadioButtonId) {
-                R.id.radioOn -> "ON"
-                else -> "OFF"
-            }
 
-            // Ambil jam & menit dari TimePicker
-            val hour: Int
-            val minute: Int
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                hour = timePicker.hour
-                minute = timePicker.minute
-            } else {
-                hour = timePicker.currentHour
-                minute = timePicker.currentMinute
-            }
+            // Ambil jam & menit dari kedua TimePicker
+            val (hourMulai, minuteMulai, hourMati, minuteMati) =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    arrayOf(
+                        timePickerMulai.hour, timePickerMulai.minute,
+                        timePickerMati.hour, timePickerMati.minute
+                    )
+                } else {
+                    arrayOf(
+                        timePickerMulai.currentHour, timePickerMulai.currentMinute,
+                        timePickerMati.currentHour, timePickerMati.currentMinute
+                    )
+                }
 
-            // Simpan untuk tiap hari yang dicentang
+            // ✅ BENAR (kumpulin semua hari yang dipilih ke dalam list)
+            val selectedDays = mutableListOf<Int>()
             checkBoxes.forEach { (cb, dayOfWeek) ->
                 if (cb.isChecked) {
-                    listJadwal.add(JadwalModel(relay, dayOfWeek, hour, minute, status))
+                    selectedDays.add(dayOfWeek)
                 }
             }
+
+            if (selectedDays.isNotEmpty()) {
+                listJadwal.add(
+                    JadwalModel(
+                        relay = relay,
+                        days = selectedDays,   // pakai list
+                        startHour = hourMulai,
+                        startMinute = minuteMulai,
+                        endHour = hourMati,
+                        endMinute = minuteMati,
+                        enabled = true
+                    )
+                )
+            }
+
 
             adapter.notifyDataSetChanged()
             saveJadwal() // simpan setelah menambah jadwal
@@ -148,7 +156,6 @@ class Jadwal : AppCompatActivity() {
 
         bottomSheet.show()
     }
-
 
     // ----------- penyimpanan -----------
     private fun saveJadwal() {
