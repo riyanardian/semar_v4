@@ -55,21 +55,17 @@ class Jadwal : AppCompatActivity() {
 
         adapter = JadwalAdapter(
             listJadwal,
-            showSwitch = false, // switch tidak ditampilkan di Activity ini
-            onDeleteClick = { jadwal, isChecked ->
-                val position = listJadwal.indexOf(jadwal)
-                if (position != -1) {
-                    listJadwal.removeAt(position)
-                    adapter.notifyItemRemoved(position)
-                    saveJadwal()
-                }
+            showSwitch = false, // <--- tambahkan ini
+            onDeleteClick = { position ->
+                listJadwal.removeAt(position)
+                adapter.notifyItemRemoved(position)
+                saveJadwal()
             },
             onSwitchChange = { jadwal, isChecked ->
                 jadwal.enabled = isChecked
                 saveJadwal()
             }
         )
-
 
 
 

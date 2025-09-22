@@ -14,6 +14,7 @@ import com.example.semar_v4.R
 import com.example.semar_v4.service.MqttService
 import android.os.IBinder
 import com.example.semar_v4.BerandaActivity
+import org.json.JSONObject
 
 class ManualFragment : Fragment() {
 
@@ -22,6 +23,7 @@ class ManualFragment : Fragment() {
     private lateinit var tvStatusRelay2: TextView
     private lateinit var ivStatusRelay1: ImageView
     private lateinit var ivStatusRelay2: ImageView
+    private lateinit var tvResetRunhour: TextView
     private lateinit var btnBack: ImageView
     private lateinit var btnRelayOn: Button
     private lateinit var btnRelayOff: Button
@@ -74,7 +76,14 @@ class ManualFragment : Fragment() {
 
             when (topic) {
                 topicRunhour -> {
-                    tvRunhourRelay2.text = "• Runhour Relay 2: $payload Jam"
+                    try {
+                        val obj = JSONObject(payload)
+                        val hrReadable = obj.optString("hr_readable", "0 jam 0 menit 0 detik")
+                        tvRunhourRelay2.text = "• Runhour Relay 2: $hrReadable"
+                    } catch (e: Exception) {
+                        // fallback kalau payload bukan JSON
+                        tvRunhourRelay2.text = "• Runhour Relay 2: $payload"
+                    }
                 }
                 topicRelay1Status -> {
                     updateRelay1Status(payload)
@@ -102,6 +111,8 @@ class ManualFragment : Fragment() {
         tvStatusRelay2 = view.findViewById(R.id.tvStatusRelay2)
         ivStatusRelay1 = view.findViewById(R.id.ivStatusRelay1)
         ivStatusRelay2 = view.findViewById(R.id.ivStatusRelay2)
+        tvResetRunhour = view.findViewById(R.id.resetrunhour)
+
 
         chipId = arguments?.getString("chipId") ?: ""
 
@@ -113,7 +124,15 @@ class ManualFragment : Fragment() {
         btnRelayOn.setOnClickListener { sendRelay1("ON") }
         btnRelayOff.setOnClickListener { sendRelay1("OFF") }
         btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
+        tvResetRunhour.setOnClickListener {
+            // Reset value runhour di SharedPreferences
+            saveRelayState("runhour_value", "0 jam 0 menit 0 detik")
 
+            // Update UI
+            tvRunhourRelay2.text = "• Runhour Relay 2: 0 jam 0 menit 0 detik"
+
+            Toast.makeText(requireContext(), "Runhour di-reset di HP", Toast.LENGTH_SHORT).show()
+        }
         return view
     }
 

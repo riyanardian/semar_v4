@@ -1,3 +1,4 @@
+
 package com.example.semar_v4
 
 import android.view.LayoutInflater
@@ -11,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 class JadwalAdapter(
     private val list: MutableList<JadwalModel>,
     private val showSwitch: Boolean, // flag untuk tampilkan switch
-    private val onDeleteClick: (JadwalModel, Boolean) -> Unit,
+    private val onDeleteClick: (Int) -> Unit,
     private val onSwitchChange: (JadwalModel, Boolean) -> Unit
 ) : RecyclerView.Adapter<JadwalAdapter.ViewHolder>() {
 
@@ -51,7 +52,7 @@ class JadwalAdapter(
 
         // --- DELETE ---
         holder.btnDelete.setOnClickListener {
-            onDeleteClick(item, item.enabled) // kirim model dan status switch
+            onDeleteClick(position)
         }
     }
 

@@ -79,50 +79,54 @@ class OtomatisFragment : Fragment() {
 
         adapter = JadwalAdapter(
             list = listJadwal,
-            showSwitch = true,  // switch muncul di fragment otomatis
-            onDeleteClick  = { jadwal, isChecked ->
-                jadwal.enabled = isChecked
-                saveJadwal()
+            showSwitch = true,
+            onDeleteClick = { position ->
+                val jadwal = listJadwal[position]
 
-                // Kirim ke MQTT sesuai status switch item
-                val topic = "device/$chipId/jadwal"
-                val payload = Gson().toJson(
-                    mapOf(
-                        "relay" to jadwal.relay,
-                        "enabled" to isChecked,
-                        "startHour" to jadwal.startHour,
-                        "startMinute" to jadwal.startMinute,
-                        "endHour" to jadwal.endHour,
-                        "endMinute" to jadwal.endMinute,
-                        "days" to jadwal.days,
-                        "delete" to false  // tambahkan delete false
+                // Hapus dari list dan simpan
+                listJadwal.removeAt(position)
+                saveJadwal()
+                adapter.notifyDataSetChanged()
+
+                // Kirim MQTT dengan delete = true
+                chipId?.let {
+                    val payload = Gson().toJson(
+                        mapOf(
+                            "relay" to jadwal.relay,
+                            "enabled" to jadwal.enabled,
+                            "startHour" to jadwal.startHour,
+                            "startMinute" to jadwal.startMinute,
+                            "endHour" to jadwal.endHour,
+                            "endMinute" to jadwal.endMinute,
+                            "days" to jadwal.days,
+                            "delete" to true
+                        )
                     )
-                )
-                mqttService?.publishMessage(topic, payload)
+                    mqttService?.publishMessage("device/$it/jadwal", payload)
+                }
             },
             onSwitchChange = { jadwal, isChecked ->
                 jadwal.enabled = isChecked
                 saveJadwal()
 
-                // Kirim ke MQTT sesuai status switch item
-                val topic = "device/$chipId/jadwal"
-                val payload = Gson().toJson(
-                    mapOf(
-                        "relay" to jadwal.relay,
-                        "enabled" to isChecked,
-                        "startHour" to jadwal.startHour,
-                        "startMinute" to jadwal.startMinute,
-                        "endHour" to jadwal.endHour,
-                        "endMinute" to jadwal.endMinute,
-                        "days" to jadwal.days,
-                        "delete" to false  // tambahkan delete false
+                // Kirim MQTT dengan delete = false
+                chipId?.let {
+                    val payload = Gson().toJson(
+                        mapOf(
+                            "relay" to jadwal.relay,
+                            "enabled" to isChecked,
+                            "startHour" to jadwal.startHour,
+                            "startMinute" to jadwal.startMinute,
+                            "endHour" to jadwal.endHour,
+                            "endMinute" to jadwal.endMinute,
+                            "days" to jadwal.days,
+                            "delete" to false
+                        )
                     )
-                )
-                mqttService?.publishMessage(topic, payload)
+                    mqttService?.publishMessage("device/$it/jadwal", payload)
+                }
             }
         )
-
-
 
 
         recyclerJadwal.layoutManager = LinearLayoutManager(requireContext())

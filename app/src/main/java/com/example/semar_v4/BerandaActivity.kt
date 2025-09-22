@@ -90,6 +90,9 @@ class BerandaActivity : AppCompatActivity() {
         setupControlButtons()
         setupClickListeners()
         loadUserSession()
+
+        btnManual.isEnabled = false
+        btnOtomatis.isEnabled = false
         // Terapkan warna abu-abu pada tombol secara default saat aplikasi pertama kali dimuat
         btnManual.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
         btnOtomatis.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray)
@@ -207,35 +210,45 @@ class BerandaActivity : AppCompatActivity() {
     }
 
     private fun restoreSelectedDevice() {
-        val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
-        val chip = sp.getString("selected_chip", null)
-        if (chip != null) {
-            val device = devices.firstOrNull { it.chipId == chip }
-            if (device != null) {
-                selectedChip = device.chipId
-                selectedDeviceName = device.name
-                selectedDeviceType = device.type
-                return
+        try {
+            val sp = getSharedPreferences("my_devices", Context.MODE_PRIVATE)
+            val chip = sp.getString("selected_chip", null)
+
+            if (!chip.isNullOrEmpty()) {
+                val device = devices.firstOrNull { it.chipId == chip }
+                if (device != null) {
+                    selectedChip = device.chipId
+                    selectedDeviceName = device.name
+                    selectedDeviceType = device.type
+
+                    Log.d("BerandaActivity", "restoreSelectedDevice: ${device.name} (${device.chipId})")
+
+                    // update UI/tombol sesuai device yang ketemu
+                    setupControlButtons()
+                    return
+                } else {
+                    // chip tersimpan tapi tidak ada di list → hapus pref biar konsisten
+                    sp.edit()
+                        .remove("selected_chip")
+                        .remove("selected_device_name")
+                        .remove("selected_device_type")
+                        .apply()
+                    Log.d("BerandaActivity", "restoreSelectedDevice: stored chip not found, cleared prefs")
+                }
             } else {
-                sp.edit().remove("selected_chip")
-                    .remove("selected_device_name")
-                    .remove("selected_device_type")
-                    .apply()
+                Log.d("BerandaActivity", "restoreSelectedDevice: no selected_chip in prefs")
             }
+        } catch (e: Exception) {
+            Log.e("BerandaActivity", "restoreSelectedDevice error", e)
         }
-        if (devices.isNotEmpty() && selectedChip == null) {
-            val first = devices.first()
-            sp.edit().apply {
-                putString("selected_chip", first.chipId)
-                putString("selected_device_name", first.name)
-                putString("selected_device_type", first.type)
-                apply()
-            }
-            selectedChip = first.chipId
-            selectedDeviceName = first.name
-            selectedDeviceType = first.type
-        }
+
+        // fallback → tidak ada device terpilih
+        selectedChip = null
+        selectedDeviceName = null
+        selectedDeviceType = null
+        disableControlButtons()
     }
+
 
 
     private fun setupControlButtons() {
@@ -291,14 +304,26 @@ class BerandaActivity : AppCompatActivity() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val t = intent?.getStringExtra("topic")
                 val payload = intent?.getStringExtra("payload") ?: return
-                if (t == topic) {
-                    runOnUiThread {
-                        when(payload) {
-                            "MANUAL" -> updateButtonColor(true)
-                            "AUTO" -> updateButtonColor(false)
-                            else -> Log.d("BerandaActivity", "Payload tidak dikenali: $payload")
+                if (t != topic) return
+
+                runOnUiThread {
+                    // pastikan activity masih valid sebelum update UI
+                    if (!isFinishing && !isDestroyed) {
+                        val selectedDevice = getSelectedDevice()
+                        selectedDevice?.let { device ->
+                            when (payload) {
+                                "MANUAL" -> {
+                                    updateButtonColor(true)
+                                    openFragment(ManualFragment(), device)
+                                }
+                                "AUTO" -> {
+                                    updateButtonColor(false)
+                                    openFragment(OtomatisFragment(), device)
+                                }
+                                else -> Log.d("BerandaActivity", "Payload tidak dikenali: $payload")
+                            }
+                            Log.d("BerandaActivity", "UI updated for $payload")
                         }
-                        Log.d("BerandaActivity", "UI updated for $payload")
                     }
                 }
             }
@@ -311,6 +336,7 @@ class BerandaActivity : AppCompatActivity() {
             registerReceiver(modeReceiver, intentFilter)
         }
     }
+
 
 
     private fun disableControlButtons() {
@@ -347,20 +373,46 @@ class BerandaActivity : AppCompatActivity() {
             putString("deviceType", device.type)
             putString("chipId", device.chipId)
         }
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.bodyContainer, fragment)
-            .commit()
+
+        // Pastikan activity belum finishing atau destroyed
+        if (!isFinishing && !isDestroyed) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.bodyContainer, fragment)
+                .commitAllowingStateLoss() // aman jika state sudah tidak bisa diubah
+        }
+
         layoutDefault.visibility = View.GONE
         recyclerView.visibility = View.GONE
     }
 
+
     private fun setupClickListeners() {
-        device.setOnClickListener { startActivity(Intent(this, Device::class.java)) }
+        device.setOnClickListener {
+            startActivity(Intent(this, Device::class.java))
+            finish()
+        }
+
         val btnAccount = findViewById<ImageView>(R.id.btnAccount)
-        btnAccount.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
-        profileImage.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
-        jadwal.setOnClickListener { startActivity(Intent(this, Jadwal::class.java)) }
-        histori.setOnClickListener { startActivity(Intent(this, Histori::class.java)) }
+        btnAccount.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+            finish()
+        }
+
+        profileImage.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+            finish()
+        }
+
+        jadwal.setOnClickListener {
+            startActivity(Intent(this, Jadwal::class.java))
+            finish()
+        }
+
+        histori.setOnClickListener {
+            startActivity(Intent(this, Histori::class.java))
+            finish()
+        }
+
     }
 
     private fun loadUserSession() {

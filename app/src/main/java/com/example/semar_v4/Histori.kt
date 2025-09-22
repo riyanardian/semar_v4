@@ -70,7 +70,7 @@ class Histori : AppCompatActivity() {
     }
 
     private fun setupSpinners() {
-        val relayOptions = arrayOf("ALL", "Relay1", "Relay2")
+        val relayOptions = arrayOf("ALL", "Relay1", "Sensor")
 
         // Adapter untuk spinnerRelay
         spinnerRelay.adapter = ArrayAdapter(
