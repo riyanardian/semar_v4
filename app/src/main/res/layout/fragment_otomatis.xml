@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp"
+    android:padding="10dp"
     android:id="@+id/main"
     >
     <ImageView
@@ -38,7 +38,104 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerJadwal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="320dp"
         android:layout_marginTop="12dp"/>
 
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:paddingTop="16dp"
+        >
+
+        <!-- Relay 1 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:id="@+id/ivStatusRelay1"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/circle_red" />
+
+            <TextView
+                android:id="@+id/tvStatusRelay1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Status Relay 1"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:textSize="15sp"
+                />
+        </LinearLayout>
+        <View
+            android:layout_width="20dp"
+            android:layout_height="match_parent" />
+        <!-- Relay 2 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/ivStatusRelay2"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/circle_red" />
+
+            <TextView
+                android:id="@+id/tvStatusRelay2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Status Mesin"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:textColor="@android:color/black" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Informasi Runhour Relay 2 -->
+    <TextView
+        android:id="@+id/kondisimesin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kondisi Mesin : "
+        android:textSize="15sp"
+        android:textColor="#000000"
+        android:textStyle="bold"
+        android:layout_marginBottom="10dp"
+        />
+
+    <!-- Informasi Runhour Relay 2 -->
+    <TextView
+        android:id="@+id/tvRunhourRelay2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Runhour Mesin 2: 0 Jam"
+        android:textSize="15sp"
+        android:textColor="#000000"
+        android:textStyle="bold"
+        android:layout_marginBottom="5dp"
+        />
+
+
+    <TextView
+        android:id="@+id/resetrunhour"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Reset RunHour"
+        android:textColor="@android:color/black"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 </LinearLayout>

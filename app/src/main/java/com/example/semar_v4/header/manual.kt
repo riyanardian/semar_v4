@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import com.example.semar_v4.R
 import com.example.semar_v4.service.MqttService
 import android.os.IBinder
+import android.util.Log
 import com.example.semar_v4.BerandaActivity
 import org.json.JSONObject
 
@@ -24,9 +25,11 @@ class ManualFragment : Fragment() {
     private lateinit var ivStatusRelay1: ImageView
     private lateinit var ivStatusRelay2: ImageView
     private lateinit var tvResetRunhour: TextView
+    private lateinit var tvKondisiMesin: TextView
     private lateinit var btnBack: ImageView
     private lateinit var btnRelayOn: Button
     private lateinit var btnRelayOff: Button
+
 
     private var chipId: String? = null
 
@@ -39,6 +42,8 @@ class ManualFragment : Fragment() {
     private var isBound = false
 
     private val PREFS_NAME = "MyRoomPrefs"
+    private var relay1On: Boolean = false
+    private var sensorOn: Boolean = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -86,12 +91,18 @@ class ManualFragment : Fragment() {
                     }
                 }
                 topicRelay1Status -> {
+                    relay1On = payload == "ON"   // update boolean relay
                     updateRelay1Status(payload)
                     saveRelayState("relay1_state", payload == "ON")
+                    updateKondisiMesin()         // update kondisi realtime
+
                 }
                 topicRelay2Status -> {
+                    sensorOn = payload == "ON"   // update boolean sensor
                     updateRelay2Status(payload)
                     saveRelayState("relay2_state", payload == "ON")
+                    updateKondisiMesin()         // update kondisi realtime
+
                 }
             }
         }
@@ -112,6 +123,7 @@ class ManualFragment : Fragment() {
         ivStatusRelay1 = view.findViewById(R.id.ivStatusRelay1)
         ivStatusRelay2 = view.findViewById(R.id.ivStatusRelay2)
         tvResetRunhour = view.findViewById(R.id.resetrunhour)
+        tvKondisiMesin = view.findViewById(R.id.kondisimesin)
 
 
         chipId = arguments?.getString("chipId") ?: ""
@@ -125,31 +137,63 @@ class ManualFragment : Fragment() {
         btnRelayOff.setOnClickListener { sendRelay1("OFF") }
         btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
         tvResetRunhour.setOnClickListener {
-            // Reset value runhour di SharedPreferences
-            saveRelayState("runhour_value", "0 jam 0 menit 0 detik")
+            // 1. Reset value runhour di SharedPreferences
+            saveRelayState("runhour_value", "0 jam 0 menit ")
 
-            // Update UI
-            tvRunhourRelay2.text = "• Runhour Relay 2: 0 jam 0 menit 0 detik"
+            // 2. Update UI
+            tvRunhourRelay2.text = "• Runhour Relay 2: 0 jam 0 menit"
 
-            Toast.makeText(requireContext(), "Runhour di-reset di HP", Toast.LENGTH_SHORT).show()
+            // 3. Publish reset ke MQTT lewat MqttService
+            val resetTopic = "device/$chipId/sensor/runhour/reset"
+            val resetPayload = "reset"
+            if (isBound) {
+                mqttService?.publishMessage(resetTopic, resetPayload)
+                Toast.makeText(requireContext(), "Runhour di-reset & dikirim ke MQTT", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "MQTT belum siap", Toast.LENGTH_SHORT).show()
+            }
+
+            // begitu buka manual, langsung paksa set mode manual di ESP
+            if (isBound) {
+                mqttService?.publishMessage("device/$chipId/mode", "MANUAL")
+                Toast.makeText(requireContext(), "Mode manual diaktifkan", Toast.LENGTH_SHORT).show()
+            } else {
+                Log.w("ManualFragment", "MQTT belum siap untuk set mode manual")
+            }
         }
+
+
         return view
     }
 
+    private fun updateKondisiMesin() {
+        val kondisi = if ((relay1On && sensorOn) || (!relay1On && !sensorOn)) {
+            "Normal"
+        } else {
+            "Trouble"
+        }
+
+        Log.d("KONDISI_MESIN", "Relay1=$relay1On Sensor=$sensorOn => $kondisi")
+        tvKondisiMesin.text = "Kondisi Mesin: $kondisi"
+    }
+
+
     private fun updateRelay1Status(status: String) {
-        tvStatusRelay1.text = "• Status Relay 1: $status"
+        tvStatusRelay1.text = "Status Relay 1: $status"
         tvStatusRelay1.setTextColor(
             resources.getColor(if (status == "ON") android.R.color.holo_green_dark else android.R.color.holo_red_dark)
         )
         ivStatusRelay1.setBackgroundResource(if (status == "ON") R.drawable.circle_green else R.drawable.circle_red)
+        updateKondisiMesin()
     }
 
     private fun updateRelay2Status(status: String) {
-        tvStatusRelay2.text = "• Status Relay 2: $status"
+        tvStatusRelay2.text = "Status Mesin: $status"
         tvStatusRelay2.setTextColor(
             resources.getColor(if (status == "ON") android.R.color.holo_green_dark else android.R.color.holo_red_dark)
         )
         ivStatusRelay2.setBackgroundResource(if (status == "ON") R.drawable.circle_green else R.drawable.circle_red)
+        updateKondisiMesin()
     }
 
     private fun broadcastToBeranda(key: String, value: String) {
@@ -226,6 +270,8 @@ class ManualFragment : Fragment() {
 
         updateRelay1Status(if (relay1) "ON" else "OFF")
         updateRelay2Status(if (relay2) "ON" else "OFF")
+
+        updateKondisiMesin()
     }
 
     override fun onStart() {

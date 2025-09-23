@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Switch
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -23,6 +25,7 @@ import com.google.gson.reflect.TypeToken
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.semar_v4.BerandaActivity
 import com.example.semar_v4.service.MqttService
+import org.json.JSONObject
 import java.util.*
 
 class OtomatisFragment : Fragment() {
@@ -33,6 +36,14 @@ class OtomatisFragment : Fragment() {
     private lateinit var btnBack: ImageView
     private lateinit var switchSchedule: Switch
     private val handler = Handler(Looper.getMainLooper())
+    private lateinit var tvRunhourRelay2: TextView
+    private lateinit var tvStatusRelay1: TextView
+    private lateinit var tvStatusRelay2: TextView
+    private lateinit var ivStatusRelay1: ImageView
+    private lateinit var ivStatusRelay2: ImageView
+    private lateinit var tvResetRunhour: TextView
+    private lateinit var tvKondisiMesin: TextView
+
 
     private var chipId: String? = null
     private var lastCheckedMinute = -1
@@ -41,17 +52,65 @@ class OtomatisFragment : Fragment() {
 
     private var mqttService: MqttService? = null
     private var isBound = false
+    private lateinit var topicRelay1Set: String
+    private lateinit var topicRelay1Status: String
+    private lateinit var topicRelay2Status: String
+    private lateinit var topicRunhour: String
+    private var relay1On: Boolean = false
+    private var sensorOn: Boolean = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MqttService.LocalBinder
             mqttService = binder.getService()
             isBound = true
+
+            // subscribe topik penting
+            mqttService?.subscribeTopic(topicRelay1Status)
+            mqttService?.subscribeTopic(topicRelay2Status)
+            mqttService?.subscribeTopic(topicRunhour)
+
+            // restore status terakhir
+            restoreRelayStatus()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             mqttService = null
             isBound = false
+        }
+    }
+
+    private val mqttReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val topic = intent?.getStringExtra("topic")
+            val payload = intent?.getStringExtra("payload") ?: "OFF"
+
+            when (topic) {
+                topicRunhour -> {
+                    try {
+                        val obj = JSONObject(payload)
+                        val hrReadable = obj.optString("hr_readable", "0 jam 0 menit")
+                        tvRunhourRelay2.text = "• Runhour: $hrReadable"
+                    } catch (e: Exception) {
+                        // fallback kalau payload bukan JSON
+                        tvRunhourRelay2.text = "• Runhour: $payload"
+                    }
+                }
+                topicRelay1Status -> {
+                    relay1On = payload == "ON"   // update boolean relay
+                    updateRelay1Status(payload)
+                    saveRelayState("relay1_state", payload == "ON")
+                    updateKondisiMesin()         // update kondisi realtime
+
+                }
+                topicRelay2Status -> {
+                    sensorOn = payload == "ON"   // update boolean sensor
+                    updateRelay2Status(payload)
+                    saveRelayState("relay2_state", payload == "ON")
+                    updateKondisiMesin()         // update kondisi realtime
+
+                }
+            }
         }
     }
 
@@ -76,6 +135,29 @@ class OtomatisFragment : Fragment() {
         switchSchedule = view.findViewById(R.id.switchSchedule)
         recyclerJadwal = view.findViewById(R.id.recyclerJadwal)
         btnBack = view.findViewById(R.id.btnBack)
+        tvRunhourRelay2 = view.findViewById(R.id.tvRunhourRelay2)
+        tvStatusRelay1 = view.findViewById(R.id.tvStatusRelay1)
+        tvStatusRelay2 = view.findViewById(R.id.tvStatusRelay2)
+        ivStatusRelay1 = view.findViewById(R.id.ivStatusRelay1)
+        ivStatusRelay2 = view.findViewById(R.id.ivStatusRelay2)
+        tvResetRunhour = view.findViewById(R.id.resetrunhour)
+        tvKondisiMesin = view.findViewById(R.id.kondisimesin)
+
+
+        chipId = arguments?.getString("chipId") ?: ""
+
+        topicRelay1Set = "device/$chipId/relay1/set"
+        topicRelay1Status = "device/$chipId/relay1/status"
+        topicRelay2Status = "device/$chipId/relay2/status"
+        topicRunhour = "device/$chipId/relay2/runhour"
+
+        // begitu buka manual, langsung paksa set mode manual di ESP
+        if (isBound) {
+            mqttService?.publishMessage("device/$chipId/mode", "AUTO")
+            Toast.makeText(requireContext(), "Mode manual diaktifkan", Toast.LENGTH_SHORT).show()
+        } else {
+            Log.w("ManualFragment", "MQTT belum siap untuk set mode manual")
+        }
 
         adapter = JadwalAdapter(
             list = listJadwal,
@@ -140,17 +222,45 @@ class OtomatisFragment : Fragment() {
                 (activity as BerandaActivity).showDeviceSelection()
             }
         }
+        tvResetRunhour.setOnClickListener {
+            // 1. Reset value runhour di SharedPreferences
+            saveRelayState("runhour_value", "0 jam 0 menit ")
 
-        switchSchedule.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                recyclerJadwal.visibility = View.VISIBLE
+            // 2. Update UI
+            tvRunhourRelay2.text = "• Runhour : 0 jam 0 menit"
+
+            // 3. Publish reset ke MQTT lewat MqttService
+            val resetTopic = "device/$chipId/sensor/runhour/reset"
+            val resetPayload = "reset"
+            if (isBound) {
+                mqttService?.publishMessage(resetTopic, resetPayload)
+                Toast.makeText(requireContext(), "Runhour di-reset & dikirim ke MQTT", Toast.LENGTH_SHORT).show()
             } else {
-                recyclerJadwal.visibility = View.GONE
-                // Optional: matikan semua item switch tanpa kirim
-                listJadwal.forEach { it.enabled = false }
-                adapter.notifyDataSetChanged()
+                Toast.makeText(requireContext(), "MQTT belum siap", Toast.LENGTH_SHORT).show()
             }
         }
+
+        switchSchedule.setOnCheckedChangeListener { _, isChecked ->
+            recyclerJadwal.visibility = if (isChecked) View.VISIBLE else View.GONE
+
+            if (isChecked) {
+                // 👉 aktifkan jadwal & load data
+                loadJadwal()
+                startJadwalChecker()
+            } else {
+                // matikan semua item jadwal
+                listJadwal.forEach { it.enabled = false }
+                adapter.notifyDataSetChanged()
+                stopJadwalChecker()
+            }
+
+            // simpan state
+            val prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean(KEY_AUTOMATIS_ACTIVE, isChecked).apply()
+        }
+
+
+
 
 
         return view
@@ -159,13 +269,33 @@ class OtomatisFragment : Fragment() {
     private fun restoreSwitchState() {
         val prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val wasActive = prefs.getBoolean(KEY_AUTOMATIS_ACTIVE, false)
+
+        switchSchedule.isChecked = wasActive
+        recyclerJadwal.visibility = if (wasActive) View.VISIBLE else View.GONE
+
         if (wasActive) {
-            switchSchedule.isChecked = true
             loadJadwal()
-            recyclerJadwal.visibility = View.VISIBLE
             startJadwalChecker()
+        } else {
+            stopJadwalChecker()
         }
     }
+
+
+
+    private fun updateKondisiMesin() {
+        val kondisi = if ((relay1On && sensorOn) || (!relay1On && !sensorOn)) {
+            "Normal"
+        } else {
+            "Trouble"
+        }
+
+        Log.d("KONDISI_MESIN", "Relay1=$relay1On Sensor=$sensorOn => $kondisi")
+        tvKondisiMesin.text = "Kondisi Mesin: $kondisi"
+    }
+
+
+
 
     private fun handleSwitchChange(isChecked: Boolean) {
         val prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -196,11 +326,17 @@ class OtomatisFragment : Fragment() {
         }
     }
 
+
     private fun saveJadwal() {
         val gson = Gson()
-        val json = gson.toJson(listJadwal)
+        // clone tapi set enabled = false
+        val tempList = listJadwal.map {
+            it.copy(enabled = false)
+        }
+        val json = gson.toJson(tempList)
         sharedPref.edit().putString("list_jadwal", json).apply()
     }
+
 
     private fun loadJadwal() {
         val gson = Gson()
@@ -209,6 +345,8 @@ class OtomatisFragment : Fragment() {
             val type = object : TypeToken<MutableList<JadwalModel>>() {}.type
             val loadedList: MutableList<JadwalModel> = gson.fromJson(json, type)
             listJadwal.clear()
+            // 👉 Paksa semua enabled = false
+            loadedList.forEach { it.enabled = false }
             listJadwal.addAll(loadedList)
             adapter.notifyDataSetChanged()
         }
@@ -267,6 +405,46 @@ class OtomatisFragment : Fragment() {
             }
         })
     }
+
+    private fun updateRelay1Status(payload: String) {
+        val isOn = payload.equals("ON", true) || payload == "1"
+        tvStatusRelay1.text = if (isOn) "Relay 1: ON" else "Relay 1: OFF"
+        ivStatusRelay1.setImageResource(if (isOn) R.drawable.circle_green else R.drawable.circle_red)
+        saveRelayState("relay1_state", isOn)
+        updateKondisiMesin()
+    }
+
+    private fun updateRelay2Status(payload: String) {
+        val isOn = payload.equals("ON", true) || payload == "1"
+        tvStatusRelay2.text = if (isOn) "Status Mesin: ON" else "Status Mesin: OFF"
+        ivStatusRelay2.setImageResource(if (isOn) R.drawable.circle_green else R.drawable.circle_red)
+        saveRelayState("relay2_state", isOn)
+        updateKondisiMesin()
+    }
+
+
+    // ===== Restore terakhir =====
+    private fun restoreRelayStatus() {
+        val prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val relay1On = prefs.getBoolean("relay1_state", false)
+        val relay2On = prefs.getBoolean("relay2_state", false)
+
+        updateRelay1Status(if (relay1On) "ON" else "OFF")
+        updateRelay2Status(if (relay2On) "ON" else "OFF")
+    }
+
+
+    // ===== Save state =====
+    private fun saveRelayState(key: String, value: Any) {
+        val pref = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val editor = pref.edit()
+        when (value) {
+            is Boolean -> editor.putBoolean(key, value)
+            is String -> editor.putString(key, value)
+        }
+        editor.apply()
+    }
+
 
     private fun stopJadwalChecker() {
         isRunning = false
